@@ -131,6 +131,14 @@ export default async function Page() {
                   <div className="text-sm text-muted-foreground">
                     Per-second ({botMetrics.seriesMetric})
                   </div>
+                  {botMetrics.series.every((p) => p.count === 0) ? (
+                    <p className="text-sm text-muted-foreground">
+                      No data for this metric in the last {botMetrics.windowSec}
+                      s. Send a message to the bot and refresh. If it stays
+                      empty, the bot may be running on a different backend
+                      instance/process.
+                    </p>
+                  ) : null}
                   <div className="max-h-80 overflow-y-auto rounded-xl ring-1 ring-foreground/10">
                     <Table>
                       <TableHeader>
