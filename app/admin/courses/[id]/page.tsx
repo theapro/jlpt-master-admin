@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getServerT } from "@/lib/i18n/server";
 import { backendJson } from "@/lib/server-backend";
 
 type Course = {
@@ -22,12 +23,9 @@ async function deleteCourseAction(id: string) {
     await backendJson<{ course: { id: number } }>(`/api/courses/${id}`, {
       method: "DELETE",
     });
-  } catch (err) {
+  } catch {
     const url = new URL(`/courses/${id}`, "http://local");
-    url.searchParams.set(
-      "error",
-      err instanceof Error ? err.message : "Failed to delete course",
-    );
+    url.searchParams.set("error", "deleteFailed");
     redirect(url.pathname + url.search);
   }
 
@@ -42,22 +40,30 @@ export default async function Page({
   params: Promise<{ id: string }>;
   searchParams?: Promise<{ error?: string }>;
 }) {
+  const { t, locale } = await getServerT();
   const { id } = await params;
 
   const sp = (await searchParams) ?? {};
   const error = typeof sp.error === "string" ? sp.error : null;
 
+  const errorKey = error ? `courses.${error}` : null;
+  const translatedError = errorKey ? t(errorKey) : null;
+  const errorText =
+    translatedError && translatedError !== errorKey ? translatedError : null;
+
   let course: Course;
   try {
     const data = await backendJson<{ course: Course }>(`/api/courses/${id}`);
     course = data.course;
-  } catch (err) {
+  } catch {
     return (
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
         <div className="px-4 lg:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight">Course</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("common.course")}
+          </h2>
           <p className="text-sm text-destructive">
-            {err instanceof Error ? err.message : "Failed to load course"}
+            {t("courses.failedToLoadCourse")}
           </p>
         </div>
       </div>
@@ -71,25 +77,29 @@ export default async function Page({
           <h2 className="truncate text-2xl font-semibold tracking-tight">
             {course.title}
           </h2>
-          <p className="text-sm text-muted-foreground">Course #{course.id}</p>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          <p className="text-sm text-muted-foreground">
+            {t("common.course")} #{course.id}
+          </p>
+          {errorText ? (
+            <p className="text-sm text-destructive">{errorText}</p>
+          ) : null}
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/courses"
             className={buttonVariants({ variant: "outline" })}
           >
-            Back
+            {t("common.back")}
           </Link>
           <Link
             href={`/courses/edit/${course.id}`}
             className={buttonVariants()}
           >
-            Edit
+            {t("common.edit")}
           </Link>
           <form action={deleteCourseAction.bind(null, id)}>
             <Button type="submit" variant="destructive">
-              Delete
+              {t("common.delete")}
             </Button>
           </form>
         </div>
@@ -98,34 +108,44 @@ export default async function Page({
       <div className="px-4 lg:px-6">
         <Card>
           <CardHeader>
-            <CardTitle>Details</CardTitle>
+            <CardTitle>{t("common.details")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-1">
-              <div className="text-sm text-muted-foreground">Status</div>
+              <div className="text-sm text-muted-foreground">
+                {t("common.status")}
+              </div>
               <div>
                 <Badge variant={course.isActive ? "default" : "outline"}>
-                  {course.isActive ? "Active" : "Inactive"}
+                  {course.isActive ? t("common.active") : t("common.inactive")}
                 </Badge>
               </div>
             </div>
 
             <div className="grid gap-1">
-              <div className="text-sm text-muted-foreground">Duration</div>
+              <div className="text-sm text-muted-foreground">
+                {t("common.duration")}
+              </div>
               <div className="text-sm">
-                {course.duration ? `${course.duration} months` : "—"}
+                {course.duration
+                  ? `${course.duration} ${t("courses.monthUnitShort")}`
+                  : "—"}
               </div>
             </div>
 
             <div className="grid gap-1">
-              <div className="text-sm text-muted-foreground">Created</div>
+              <div className="text-sm text-muted-foreground">
+                {t("common.createdAt")}
+              </div>
               <div className="text-sm">
-                {new Date(course.createdAt).toLocaleString()}
+                {new Date(course.createdAt).toLocaleString(locale)}
               </div>
             </div>
 
             <div className="grid gap-1">
-              <div className="text-sm text-muted-foreground">Description</div>
+              <div className="text-sm text-muted-foreground">
+                {t("common.description")}
+              </div>
               <div className="text-sm whitespace-pre-wrap">
                 {course.description}
               </div>

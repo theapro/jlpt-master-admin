@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getServerT } from "@/lib/i18n/server";
 import { backendJson } from "@/lib/server-backend";
 
 type CourseRow = {
@@ -21,17 +22,21 @@ type CourseRow = {
 };
 
 export default async function Page() {
+  const { t } = await getServerT();
+
   let courses: CourseRow[] = [];
   try {
     const data = await backendJson<{ courses: CourseRow[] }>("/api/courses");
     courses = Array.isArray(data.courses) ? data.courses : [];
-  } catch (err) {
+  } catch {
     return (
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
         <div className="px-4 lg:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight">Courses</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("nav.courses")}
+          </h2>
           <p className="text-sm text-destructive">
-            {err instanceof Error ? err.message : "Failed to load courses"}
+            {t("courses.failedToLoad")}
           </p>
         </div>
       </div>
@@ -42,13 +47,15 @@ export default async function Page() {
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="flex items-center justify-between gap-4 px-4 lg:px-6">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Courses</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("nav.courses")}
+          </h2>
           <p className="text-sm text-muted-foreground">
-            {courses.length} courses
+            {courses.length} {t("courses.countLabel")}
           </p>
         </div>
         <Link href="/courses/create" className={buttonVariants()}>
-          Create course
+          {t("courses.createAction")}
         </Link>
       </div>
 
@@ -57,10 +64,12 @@ export default async function Page() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("common.title")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead>{t("common.duration")}</TableHead>
+                <TableHead className="text-right">
+                  {t("common.actions")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -69,10 +78,14 @@ export default async function Page() {
                   <TableCell className="font-medium">{c.title}</TableCell>
                   <TableCell>
                     <Badge variant={c.isActive ? "default" : "outline"}>
-                      {c.isActive ? "Active" : "Inactive"}
+                      {c.isActive ? t("common.active") : t("common.inactive")}
                     </Badge>
                   </TableCell>
-                  <TableCell>{c.duration ? `${c.duration} mo` : "—"}</TableCell>
+                  <TableCell>
+                    {c.duration
+                      ? `${c.duration} ${t("courses.monthUnitShort")}`
+                      : "—"}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Link
@@ -82,7 +95,7 @@ export default async function Page() {
                           variant: "outline",
                         })}
                       >
-                        View
+                        {t("common.view")}
                       </Link>
                       <Link
                         href={`/courses/edit/${c.id}`}
@@ -91,7 +104,7 @@ export default async function Page() {
                           variant: "outline",
                         })}
                       >
-                        Edit
+                        {t("common.edit")}
                       </Link>
                     </div>
                   </TableCell>
@@ -101,7 +114,7 @@ export default async function Page() {
               {courses.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-10 text-center">
-                    No courses yet.
+                    {t("courses.empty")}
                   </TableCell>
                 </TableRow>
               ) : null}

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getServerT } from "@/lib/i18n/server";
 import { backendJson } from "@/lib/server-backend";
 
 type AdminUser = {
@@ -26,11 +27,11 @@ type ChatHistoryResponse = {
   messages: Array<{ createdAt: string }>;
 };
 
-const formatDateTime = (iso: string | null | undefined) => {
+const formatDateTime = (iso: string | null | undefined, locale: string) => {
   if (!iso) return "—";
   const d = new Date(iso);
   if (!Number.isFinite(d.getTime())) return "—";
-  return d.toLocaleString();
+  return d.toLocaleString(locale);
 };
 
 const formatUsername = (value: string | null | undefined) => {
@@ -39,12 +40,16 @@ const formatUsername = (value: string | null | undefined) => {
   return `@${u.replace(/^@+/, "")}`;
 };
 
-const formatSupportStatus = (value: string | null | undefined) => {
+const formatSupportStatus = (
+  value: string | null | undefined,
+  t: (key: string) => string,
+) => {
   const v = typeof value === "string" ? value : "none";
-  if (v === "active") return "IN_PROGRESS";
-  if (v === "closed") return "CLOSED";
-  if (v === "pending") return "OPEN";
-  return v.toUpperCase();
+  if (v === "active") return t("supportStatus.active");
+  if (v === "closed") return t("supportStatus.closed");
+  if (v === "pending") return t("supportStatus.pending");
+  if (v === "none") return t("supportStatus.none");
+  return t("supportStatus.unknown");
 };
 
 export default async function Page({
@@ -52,19 +57,22 @@ export default async function Page({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { t, locale } = await getServerT();
   const { id } = await params;
 
   let user: AdminUser;
   try {
     const data = await backendJson<{ user: AdminUser }>(`/api/users/${id}`);
     user = data.user;
-  } catch (err) {
+  } catch {
     return (
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
         <div className="px-4 lg:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight">User</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("common.user")}
+          </h2>
           <p className="text-sm text-destructive">
-            {err instanceof Error ? err.message : "Failed to load user"}
+            {t("users.failedToLoadUser")}
           </p>
         </div>
       </div>
@@ -89,13 +97,15 @@ export default async function Page({
           <h2 className="truncate text-2xl font-semibold tracking-tight">
             {user.name}
           </h2>
-          <p className="text-sm text-muted-foreground">User #{user.id}</p>
+          <p className="text-sm text-muted-foreground">
+            {t("common.user")} #{user.id}
+          </p>
         </div>
         <Link
           href="/admin/users"
           className={buttonVariants({ variant: "outline" })}
         >
-          Back
+          {t("common.back")}
         </Link>
       </div>
 
@@ -103,23 +113,29 @@ export default async function Page({
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader>
-              <CardTitle>Profile</CardTitle>
+              <CardTitle>{t("common.profile")}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4">
               <div className="grid gap-1">
-                <div className="text-sm text-muted-foreground">Name</div>
+                <div className="text-sm text-muted-foreground">
+                  {t("common.name")}
+                </div>
                 <div className="text-sm">{user.name}</div>
               </div>
 
               <div className="grid gap-1">
-                <div className="text-sm text-muted-foreground">Username</div>
+                <div className="text-sm text-muted-foreground">
+                  {t("common.username")}
+                </div>
                 <div className="text-sm">
                   {formatUsername(user.telegramUsername)}
                 </div>
               </div>
 
               <div className="grid gap-1">
-                <div className="text-sm text-muted-foreground">Phone</div>
+                <div className="text-sm text-muted-foreground">
+                  {t("common.phone")}
+                </div>
                 <div className="text-sm">{user.phone ?? "—"}</div>
               </div>
             </CardContent>
@@ -127,19 +143,19 @@ export default async function Page({
 
           <Card>
             <CardHeader>
-              <CardTitle>Learning Info</CardTitle>
+              <CardTitle>{t("common.learningInfo")}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4">
               <div className="grid gap-1">
                 <div className="text-sm text-muted-foreground">
-                  Selected goal
+                  {t("common.selectedGoal")}
                 </div>
                 <div className="text-sm">{user.goal ?? "—"}</div>
               </div>
 
               <div className="grid gap-1">
                 <div className="text-sm text-muted-foreground">
-                  Selected format
+                  {t("common.selectedFormat")}
                 </div>
                 <div className="text-sm">{user.learningFormat ?? "—"}</div>
               </div>
@@ -148,24 +164,30 @@ export default async function Page({
 
           <Card>
             <CardHeader>
-              <CardTitle>Activity</CardTitle>
+              <CardTitle>{t("common.activity")}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4">
               <div className="grid gap-1">
-                <div className="text-sm text-muted-foreground">Created at</div>
-                <div className="text-sm">{formatDateTime(user.createdAt)}</div>
-              </div>
-
-              <div className="grid gap-1">
                 <div className="text-sm text-muted-foreground">
-                  Last activity
+                  {t("common.createdAt")}
                 </div>
-                <div className="text-sm">{formatDateTime(lastActivity)}</div>
+                <div className="text-sm">
+                  {formatDateTime(user.createdAt, locale)}
+                </div>
               </div>
 
               <div className="grid gap-1">
                 <div className="text-sm text-muted-foreground">
-                  Support status
+                  {t("common.lastActivity")}
+                </div>
+                <div className="text-sm">
+                  {formatDateTime(lastActivity, locale)}
+                </div>
+              </div>
+
+              <div className="grid gap-1">
+                <div className="text-sm text-muted-foreground">
+                  {t("common.supportStatus")}
                 </div>
                 <div className="text-sm">
                   <Badge
@@ -176,7 +198,7 @@ export default async function Page({
                         : "outline"
                     }
                   >
-                    {formatSupportStatus(user.supportStatus)}
+                    {formatSupportStatus(user.supportStatus, t)}
                   </Badge>
                 </div>
               </div>

@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { backendFetch, getAdminTokenFromCookies } from "@/lib/server-backend";
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const token = await getAdminTokenFromCookies();
   if (!token)
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });

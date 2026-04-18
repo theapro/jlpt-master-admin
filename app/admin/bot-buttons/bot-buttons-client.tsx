@@ -43,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useT } from "@/components/i18n-provider";
 import { cn } from "@/lib/utils";
 
 type BotButtonRow = {
@@ -90,10 +91,12 @@ const applyGridPositions = (buttons: BotButtonRow[]) =>
   }));
 
 function KeyboardPreview({ grid }: { grid: string[][] }) {
+  const t = useT();
+
   if (!hasAnyButtons(grid)) {
     return (
       <p className="text-sm text-muted-foreground">
-        No buttons for this state.
+        {t("botButtons.noButtonsForState")}
       </p>
     );
   }
@@ -170,12 +173,14 @@ function SortableButton({
 }
 
 export function BotButtonsClient() {
+  const t = useT();
+
   const [states, setStates] = React.useState<string[]>([]);
   const [state, setState] = React.useState<string | null>(null);
 
   const [loadingStates, setLoadingStates] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [errorKey, setErrorKey] = React.useState<string | null>(null);
 
   const [grid, setGrid] = React.useState<string[][]>([]);
   const [editable, setEditable] = React.useState(false);
@@ -185,7 +190,7 @@ export function BotButtonsClient() {
   const [draftButtons, setDraftButtons] = React.useState<BotButtonRow[]>([]);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
-  const [editError, setEditError] = React.useState<string | null>(null);
+  const [editErrorKey, setEditErrorKey] = React.useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -193,7 +198,7 @@ export function BotButtonsClient() {
 
   const loadStates = React.useCallback(async () => {
     setLoadingStates(true);
-    setError(null);
+    setErrorKey(null);
 
     try {
       const res = await fetch("/api/admin/bot-buttons/states", {
@@ -202,19 +207,13 @@ export function BotButtonsClient() {
       const data = (await res.json().catch(() => null)) as unknown;
 
       if (!res.ok) {
-        const messageValue =
-          data && typeof data === "object"
-            ? (data as { message?: unknown }).message
-            : undefined;
-        throw new Error(
-          typeof messageValue === "string" && messageValue.trim().length > 0
-            ? messageValue
-            : "Failed to load states",
-        );
+        throw new Error("loadStatesFailed");
       }
 
       const statesValue =
-        data && typeof data === "object" ? (data as any).states : undefined;
+        data && typeof data === "object"
+          ? (data as { states?: unknown }).states
+          : undefined;
       const list = Array.isArray(statesValue)
         ? (statesValue as StatesResponse["states"])
         : [];
@@ -226,10 +225,10 @@ export function BotButtonsClient() {
           return list[0]!;
         });
       }
-    } catch (e) {
+    } catch {
       setStates([]);
       setState(null);
-      setError(e instanceof Error ? e.message : "Failed to load states");
+      setErrorKey("botButtons.failedToLoadStates");
     } finally {
       setLoadingStates(false);
     }
@@ -239,7 +238,7 @@ export function BotButtonsClient() {
     if (!s) return;
 
     setLoading(true);
-    setError(null);
+    setErrorKey(null);
 
     try {
       const res = await fetch(
@@ -249,15 +248,7 @@ export function BotButtonsClient() {
       const data = (await res.json().catch(() => null)) as unknown;
 
       if (!res.ok) {
-        const messageValue =
-          data && typeof data === "object"
-            ? (data as { message?: unknown }).message
-            : undefined;
-        throw new Error(
-          typeof messageValue === "string" && messageValue.trim().length > 0
-            ? messageValue
-            : "Failed to load preview",
-        );
+        throw new Error("loadPreviewFailed");
       }
 
       const payload = (
@@ -267,11 +258,11 @@ export function BotButtonsClient() {
       setGrid(Array.isArray(payload?.grid) ? payload!.grid : []);
       setEditable(!!payload?.editable);
       setButtons(Array.isArray(payload?.buttons) ? payload!.buttons : []);
-    } catch (e) {
+    } catch {
       setGrid([]);
       setEditable(false);
       setButtons([]);
-      setError(e instanceof Error ? e.message : "Failed to load preview");
+      setErrorKey("botButtons.failedToLoadPreview");
     } finally {
       setLoading(false);
     }
@@ -287,7 +278,7 @@ export function BotButtonsClient() {
   }, [loadPreview, state]);
 
   const openEdit = () => {
-    setEditError(null);
+    setEditErrorKey(null);
     const ordered = toEditableOrder(buttons);
     setDraftButtons(ordered);
     setSelectedId(ordered[0]?.id ?? null);
@@ -321,13 +312,13 @@ export function BotButtonsClient() {
   };
 
   const onSave = async () => {
-    setEditError(null);
+    setEditErrorKey(null);
 
     const trimmedInvalid = draftButtons.some(
       (b) => typeof b.label !== "string" || b.label.trim().length === 0,
     );
     if (trimmedInvalid) {
-      setEditError("Button text cannot be empty");
+      setEditErrorKey("botButtons.buttonTextCannotBeEmpty");
       return;
     }
 
@@ -364,17 +355,9 @@ export function BotButtonsClient() {
           },
         );
 
-        const data = (await res.json().catch(() => null)) as unknown;
+        await res.json().catch(() => null);
         if (!res.ok) {
-          const messageValue =
-            data && typeof data === "object"
-              ? (data as { message?: unknown }).message
-              : undefined;
-          throw new Error(
-            typeof messageValue === "string" && messageValue.trim().length > 0
-              ? messageValue
-              : "Failed to save",
-          );
+          throw new Error("saveFailed");
         }
       };
 
@@ -405,8 +388,8 @@ export function BotButtonsClient() {
 
       setEditOpen(false);
       if (state) await loadPreview(state);
-    } catch (e) {
-      setEditError(e instanceof Error ? e.message : "Failed to save");
+    } catch {
+      setEditErrorKey("botButtons.saveFailed");
     } finally {
       setSaving(false);
     }
@@ -415,21 +398,23 @@ export function BotButtonsClient() {
     <div className="grid gap-6">
       <Card>
         <CardHeader className="border-b">
-          <CardTitle>State</CardTitle>
-          <CardDescription>
-            Select a state to preview the keyboard
-          </CardDescription>
+          <CardTitle>{t("botButtons.stateTitle")}</CardTitle>
+          <CardDescription>{t("botButtons.stateDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3">
-            <Label htmlFor="state">State</Label>
+            <Label htmlFor="state">{t("botButtons.stateTitle")}</Label>
             <Select value={state ?? ""} onValueChange={(v) => setState(v)}>
               <SelectTrigger
                 id="state"
                 disabled={loadingStates || states.length === 0}
               >
                 <SelectValue
-                  placeholder={loadingStates ? "Loading..." : "Select state"}
+                  placeholder={
+                    loadingStates
+                      ? t("common.loading")
+                      : t("botButtons.selectStatePlaceholder")
+                  }
                 />
               </SelectTrigger>
               <SelectContent>
@@ -441,7 +426,9 @@ export function BotButtonsClient() {
               </SelectContent>
             </Select>
 
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {errorKey ? (
+              <p className="text-sm text-destructive">{t(errorKey)}</p>
+            ) : null}
           </div>
         </CardContent>
       </Card>
@@ -450,9 +437,9 @@ export function BotButtonsClient() {
         <CardHeader className="border-b">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <CardTitle>Grid preview</CardTitle>
+              <CardTitle>{t("botButtons.gridPreviewTitle")}</CardTitle>
               <CardDescription>
-                This is exactly what users see in the bot
+                {t("botButtons.gridPreviewDescription")}
               </CardDescription>
             </div>
 
@@ -464,14 +451,16 @@ export function BotButtonsClient() {
                 onClick={openEdit}
                 disabled={loading || buttons.length === 0}
               >
-                Edit
+                {t("common.edit")}
               </Button>
             ) : null}
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <p className="text-sm text-muted-foreground">
+              {t("common.loading")}
+            </p>
           ) : (
             <KeyboardPreview grid={grid} />
           )}
@@ -481,9 +470,9 @@ export function BotButtonsClient() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit buttons</DialogTitle>
+            <DialogTitle>{t("botButtons.editButtonsTitle")}</DialogTitle>
             <DialogDescription>
-              Drag & drop to change order. Click a button to edit its text.
+              {t("botButtons.editButtonsDescription")}
             </DialogDescription>
           </DialogHeader>
 
@@ -516,18 +505,24 @@ export function BotButtonsClient() {
             </DndContext>
 
             <div className="grid gap-2">
-              <Label htmlFor="edit-label">Button text</Label>
+              <Label htmlFor="edit-label">
+                {t("botButtons.buttonTextLabel")}
+              </Label>
               <Input
                 id="edit-label"
                 value={selected?.label ?? ""}
                 onChange={(e) => updateSelectedLabel(e.target.value)}
-                placeholder={selected ? "Enter text" : "Select a button"}
+                placeholder={
+                  selected
+                    ? t("botButtons.enterTextPlaceholder")
+                    : t("botButtons.selectButtonPlaceholder")
+                }
                 disabled={!selected}
               />
             </div>
 
-            {editError ? (
-              <p className="text-sm text-destructive">{editError}</p>
+            {editErrorKey ? (
+              <p className="text-sm text-destructive">{t(editErrorKey)}</p>
             ) : null}
           </div>
 
@@ -538,10 +533,10 @@ export function BotButtonsClient() {
               onClick={() => setEditOpen(false)}
               disabled={saving}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="button" onClick={onSave} disabled={saving}>
-              {saving ? "Saving..." : "Save"}
+              {saving ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

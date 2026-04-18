@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getServerT } from "@/lib/i18n/server";
 import { backendJson } from "@/lib/server-backend";
 
 type AdminUser = {
@@ -48,12 +49,9 @@ async function updateSupportStatusAction(userId: number, formData: FormData) {
     );
 
     redirect("/admin/users");
-  } catch (err) {
+  } catch {
     const url = new URL("/admin/users", "http://local");
-    url.searchParams.set(
-      "error",
-      err instanceof Error ? err.message : "Failed to update support status",
-    );
+    url.searchParams.set("error", "supportStatusUpdateFailed");
     redirect(url.pathname + url.search);
   }
 }
@@ -63,21 +61,27 @@ export default async function Page({
 }: {
   searchParams?: Promise<{ error?: string }>;
 }) {
+  const { t } = await getServerT();
   const sp = (await searchParams) ?? {};
   const error = typeof sp.error === "string" ? sp.error : null;
+
+  const errorKey = error ? `users.${error}` : null;
+  const translatedError = errorKey ? t(errorKey) : null;
+  const errorText =
+    translatedError && translatedError !== errorKey ? translatedError : null;
 
   let users: AdminUser[] = [];
   try {
     const data = await backendJson<{ users: AdminUser[] }>("/api/users");
     users = Array.isArray(data.users) ? data.users : [];
-  } catch (err) {
+  } catch {
     return (
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
         <div className="px-4 lg:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight">Users</h2>
-          <p className="text-sm text-destructive">
-            {err instanceof Error ? err.message : "Failed to load users"}
-          </p>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("nav.users")}
+          </h2>
+          <p className="text-sm text-destructive">{t("users.failedToLoad")}</p>
         </div>
       </div>
     );
@@ -86,9 +90,15 @@ export default async function Page({
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="px-4 lg:px-6">
-        <h2 className="text-2xl font-semibold tracking-tight">Users</h2>
-        <p className="text-sm text-muted-foreground">{users.length} users</p>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        <h2 className="text-2xl font-semibold tracking-tight">
+          {t("nav.users")}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {users.length} {t("users.countLabel")}
+        </p>
+        {errorText ? (
+          <p className="text-sm text-destructive">{errorText}</p>
+        ) : null}
       </div>
 
       <div className="px-4 lg:px-6">
@@ -96,13 +106,15 @@ export default async function Page({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Username</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Goal</TableHead>
-                <TableHead>Support</TableHead>
-                <TableHead>Operator</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("common.name")}</TableHead>
+                <TableHead>{t("common.username")}</TableHead>
+                <TableHead>{t("common.phone")}</TableHead>
+                <TableHead>{t("common.goal")}</TableHead>
+                <TableHead>{t("common.support")}</TableHead>
+                <TableHead>{t("common.operator")}</TableHead>
+                <TableHead className="text-right">
+                  {t("common.actions")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -137,7 +149,7 @@ export default async function Page({
                           variant: "outline",
                         })}
                       >
-                        View
+                        {t("common.view")}
                       </Link>
                     </div>
                   </TableCell>
@@ -147,7 +159,7 @@ export default async function Page({
               {users.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="py-10 text-center">
-                    No users yet.
+                    {t("users.empty")}
                   </TableCell>
                 </TableRow>
               ) : null}

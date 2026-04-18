@@ -17,6 +17,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { EllipsisVerticalIcon, LogOutIcon } from "lucide-react";
+import { useT } from "@/components/i18n-provider";
 
 export function NavUser({
   user,
@@ -28,6 +29,7 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const t = useT();
   const initials = (user.name || user.email || "A")
     .trim()
     .split(/\s+/)
@@ -84,7 +86,7 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuItem render={<a href="/logout" />}>
               <LogOutIcon />
-              Log out
+              {t("common.logOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

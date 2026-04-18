@@ -5,6 +5,7 @@ import * as React from "react";
 import { CircleDotIcon, LockIcon, MailIcon, MailOpenIcon } from "lucide-react";
 
 import { ChatWindow } from "@/components/admin/chat-window";
+import { useI18n, useT } from "@/components/i18n-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,26 +71,26 @@ type SortOption =
 
 type StatusFilter = "all" | "unread" | "read" | "in_progress";
 
-const sortLabel = (v: SortOption) => {
-  if (v === "newest") return "Latest activity";
-  if (v === "oldest") return "Oldest";
-  if (v === "unread_first") return "Unread first";
-  if (v === "in_progress_first") return "In progress first";
-  return "Closed";
+const sortLabelKey = (v: SortOption) => {
+  if (v === "newest") return "messages.sort.latestActivity";
+  if (v === "oldest") return "messages.sort.oldest";
+  if (v === "unread_first") return "messages.sort.unreadFirst";
+  if (v === "in_progress_first") return "messages.sort.inProgressFirst";
+  return "messages.sort.closed";
 };
 
-const statusFilterLabel = (v: StatusFilter) => {
-  if (v === "all") return "All";
-  if (v === "unread") return "Unread";
-  if (v === "read") return "Read";
-  return "In progress";
+const statusFilterLabelKey = (v: StatusFilter) => {
+  if (v === "all") return "messages.filter.all";
+  if (v === "unread") return "messages.filter.unread";
+  if (v === "read") return "messages.filter.read";
+  return "messages.filter.inProgress";
 };
 
-const formatListTime = (iso: string | undefined) => {
+const formatListTime = (iso: string | undefined, locale: string) => {
   if (!iso) return "";
   const d = new Date(iso);
   if (!Number.isFinite(d.getTime())) return "";
-  return d.toLocaleString([], {
+  return d.toLocaleString(locale, {
     month: "short",
     day: "2-digit",
     hour: "2-digit",
@@ -125,6 +126,9 @@ export function MessagesClient({
   wsToken: string | null;
   initialTelegramId?: string | null;
 }) {
+  const t = useT();
+  const { locale } = useI18n();
+
   const [qInput, setQInput] = React.useState("");
   const debouncedQ = useDebouncedValue(qInput, 300);
 
@@ -133,7 +137,7 @@ export function MessagesClient({
   const [page, setPage] = React.useState(1);
 
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [errorKey, setErrorKey] = React.useState<string | null>(null);
 
   const [chats, setChats] = React.useState<ChatListItem[]>([]);
   const [hasMore, setHasMore] = React.useState(false);
@@ -148,13 +152,13 @@ export function MessagesClient({
       ? chats.find((c) => c.telegramId === selectedTelegramId)
       : null) ?? null;
 
-  const selectedTitle = selected?.user?.name ?? "Conversation";
+  const selectedTitle = selected?.user?.name ?? t("messages.conversation");
   const selectedUserId = selected?.user?.id ?? null;
   const selectedSupportStatus = selected?.user?.supportStatus ?? null;
 
   const refetchInbox = React.useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setErrorKey(null);
 
     try {
       const params = new URLSearchParams();
@@ -182,16 +186,7 @@ export function MessagesClient({
       });
 
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as unknown;
-        const messageValue =
-          data && typeof data === "object"
-            ? (data as { message?: unknown }).message
-            : undefined;
-        throw new Error(
-          typeof messageValue === "string" && messageValue.trim().length > 0
-            ? messageValue
-            : `Failed to load inbox (${res.status})`,
-        );
+        throw new Error("failedToLoadInbox");
       }
 
       const data = (await res.json()) as InboxResponse;
@@ -245,8 +240,8 @@ export function MessagesClient({
         if (rows.some((c) => c.telegramId === next)) return next;
         return rows[0]?.telegramId ?? null;
       });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load inbox");
+    } catch {
+      setErrorKey("messages.failedToLoadInbox");
     } finally {
       setLoading(false);
     }
@@ -365,7 +360,9 @@ export function MessagesClient({
         <div className="grid h-full flex-1 min-h-0 gap-4 md:grid-cols-[360px_1fr]">
           <Card className="h-full min-h-0 gap-0 py-0">
             <CardHeader className="border-b py-4">
-              <CardTitle className="text-base">Support Inbox</CardTitle>
+              <CardTitle className="text-base">
+                {t("messages.supportInboxTitle")}
+              </CardTitle>
 
               <div className="mt-3 grid gap-2">
                 <Input
@@ -374,7 +371,7 @@ export function MessagesClient({
                     setQInput(e.target.value);
                     setPage(1);
                   }}
-                  placeholder="Search name, @username, phone"
+                  placeholder={t("messages.searchPlaceholder")}
                 />
 
                 <div className="grid grid-cols-2 gap-2">
@@ -388,28 +385,28 @@ export function MessagesClient({
                     <SelectTrigger
                       size="sm"
                       className="w-full"
-                      aria-label="Sort"
+                      aria-label={t("messages.sortAria")}
                     >
-                      <SelectValue>{sortLabel(sort)}</SelectValue>
+                      <SelectValue>{t(sortLabelKey(sort))}</SelectValue>
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
                       <SelectItem value="newest" className="rounded-lg">
-                        Latest activity
+                        {t("messages.sort.latestActivity")}
                       </SelectItem>
                       <SelectItem value="oldest" className="rounded-lg">
-                        Oldest
+                        {t("messages.sort.oldest")}
                       </SelectItem>
                       <SelectItem value="unread_first" className="rounded-lg">
-                        Unread first
+                        {t("messages.sort.unreadFirst")}
                       </SelectItem>
                       <SelectItem
                         value="in_progress_first"
                         className="rounded-lg"
                       >
-                        In progress first
+                        {t("messages.sort.inProgressFirst")}
                       </SelectItem>
                       <SelectItem value="closed_first" className="rounded-lg">
-                        Closed
+                        {t("messages.sort.closed")}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -424,24 +421,24 @@ export function MessagesClient({
                     <SelectTrigger
                       size="sm"
                       className="w-full"
-                      aria-label="Status"
+                      aria-label={t("messages.statusAria")}
                     >
                       <SelectValue>
-                        {statusFilterLabel(statusFilter)}
+                        {t(statusFilterLabelKey(statusFilter))}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
                       <SelectItem value="all" className="rounded-lg">
-                        All
+                        {t("messages.filter.all")}
                       </SelectItem>
                       <SelectItem value="unread" className="rounded-lg">
-                        Unread
+                        {t("messages.filter.unread")}
                       </SelectItem>
                       <SelectItem value="read" className="rounded-lg">
-                        Read
+                        {t("messages.filter.read")}
                       </SelectItem>
                       <SelectItem value="in_progress" className="rounded-lg">
-                        In progress
+                        {t("messages.filter.inProgress")}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -449,7 +446,7 @@ export function MessagesClient({
 
                 <div className="flex items-center justify-between gap-2">
                   <div className="text-xs text-muted-foreground">
-                    Page {page}
+                    {t("messages.page")} {page}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -460,7 +457,7 @@ export function MessagesClient({
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page <= 1 || loading}
                     >
-                      Prev
+                      {t("messages.prev")}
                     </Button>
 
                     <Button
@@ -470,13 +467,13 @@ export function MessagesClient({
                       onClick={() => setPage((p) => p + 1)}
                       disabled={!hasMore || loading}
                     >
-                      Next
+                      {t("messages.next")}
                     </Button>
                   </div>
                 </div>
 
-                {error ? (
-                  <p className="text-sm text-destructive">{error}</p>
+                {errorKey ? (
+                  <p className="text-sm text-destructive">{t(errorKey)}</p>
                 ) : null}
               </div>
             </CardHeader>
@@ -485,20 +482,20 @@ export function MessagesClient({
               <div className="flex flex-col">
                 {loading && chats.length === 0 ? (
                   <div className="px-4 py-10 text-center text-sm text-muted-foreground">
-                    Loading…
+                    {t("common.loading")}
                   </div>
                 ) : null}
 
                 {chats.map((c) => {
                   const isActive = c.telegramId === selectedTelegramId;
 
-                  const fullName = c.user?.name ?? "Unknown user";
+                  const fullName = c.user?.name ?? t("messages.unknownUser");
                   const usernameValue = c.user?.telegramUsername
                     ? `@${String(c.user.telegramUsername).replace(/^@+/, "")}`
                     : c.telegramId;
 
                   const preview = c.lastMessage?.text ?? "";
-                  const time = formatListTime(c.lastMessage?.createdAt);
+                  const time = formatListTime(c.lastMessage?.createdAt, locale);
 
                   const unreadCount = c.unreadCount ?? 0;
                   const isUnread = unreadCount > 0;
@@ -530,7 +527,7 @@ export function MessagesClient({
                             {isInProgress ? (
                               <span
                                 className="inline-flex items-center"
-                                title="In progress"
+                                title={t("supportStatus.active")}
                               >
                                 <CircleDotIcon className="size-4 text-foreground" />
                               </span>
@@ -539,7 +536,7 @@ export function MessagesClient({
                             {isClosed ? (
                               <span
                                 className="inline-flex items-center"
-                                title="Closed"
+                                title={t("supportStatus.closed")}
                               >
                                 <LockIcon className="size-4 text-muted-foreground" />
                               </span>
@@ -548,7 +545,7 @@ export function MessagesClient({
                             {isUnread ? (
                               <span
                                 className="inline-flex items-center gap-1"
-                                title="Unread"
+                                title={t("messages.unread")}
                               >
                                 <MailIcon className="size-4 text-muted-foreground" />
                                 <Badge
@@ -561,7 +558,7 @@ export function MessagesClient({
                             ) : (
                               <span
                                 className="inline-flex items-center"
-                                title="Read"
+                                title={t("messages.read")}
                               >
                                 <MailOpenIcon className="size-4 text-muted-foreground" />
                               </span>
@@ -584,7 +581,7 @@ export function MessagesClient({
 
                 {chats.length === 0 && !loading ? (
                   <div className="px-4 py-10 text-center text-sm text-muted-foreground">
-                    No conversations yet.
+                    {t("messages.empty")}
                   </div>
                 ) : null}
               </div>
@@ -610,7 +607,7 @@ export function MessagesClient({
               />
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                Select a conversation.
+                {t("messages.selectConversation")}
               </div>
             )}
           </Card>

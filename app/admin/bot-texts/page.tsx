@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getServerT } from "@/lib/i18n/server";
 import { backendJson } from "@/lib/server-backend";
 
 type BotTextRow = {
@@ -29,19 +30,23 @@ const toTitle = (value: string) =>
     .join(" ");
 
 export default async function Page() {
+  const { t } = await getServerT();
+
   let texts: BotTextRow[] = [];
   try {
     const data = await backendJson<{ texts: BotTextRow[] }>(
       "/api/admin/bot-texts",
     );
     texts = Array.isArray(data.texts) ? data.texts : [];
-  } catch (err) {
+  } catch {
     return (
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
         <div className="px-4 lg:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight">Bot texts</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("nav.botTexts")}
+          </h2>
           <p className="text-sm text-destructive">
-            {err instanceof Error ? err.message : "Failed to load bot texts"}
+            {t("botTexts.failedToLoad")}
           </p>
         </div>
       </div>
@@ -58,10 +63,11 @@ export default async function Page() {
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="flex items-center justify-between gap-4 px-4 lg:px-6">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Bot texts</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("nav.botTexts")}
+          </h2>
           <p className="text-sm text-muted-foreground">
-            Bot yuboradigan matnlarni shu yerdan tahrirlaysiz. "Default" —
-            original, "Custom" — siz o‘zgartirgan.
+            {t("botTexts.description")}
           </p>
         </div>
       </div>
@@ -71,46 +77,46 @@ export default async function Page() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Text</TableHead>
-                <TableHead>Group</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Edit</TableHead>
+                <TableHead>{t("common.text")}</TableHead>
+                <TableHead>{t("common.group")}</TableHead>
+                <TableHead>{t("common.value")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead className="text-right">{t("common.edit")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sorted.map((t) => (
-                <TableRow key={t.key}>
+              {sorted.map((row) => (
+                <TableRow key={row.key}>
                   <TableCell>
                     <div className="grid gap-1">
-                      <p className="font-medium">{toTitle(t.key)}</p>
+                      <p className="font-medium">{toTitle(row.key)}</p>
                       <p className="font-mono text-xs text-muted-foreground">
-                        {t.key}
+                        {row.key}
                       </p>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{t.group}</Badge>
+                    <Badge variant="outline">{row.group}</Badge>
                   </TableCell>
                   <TableCell className="max-w-180 whitespace-pre-wrap text-sm">
-                    {t.value}
+                    {row.value}
                   </TableCell>
                   <TableCell>
-                    {t.source === "db" ? (
-                      <Badge variant="default">Custom</Badge>
+                    {row.source === "db" ? (
+                      <Badge variant="default">{t("common.custom")}</Badge>
                     ) : (
-                      <Badge variant="outline">Default</Badge>
+                      <Badge variant="outline">{t("common.default")}</Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
                     <Link
-                      href={`/bot-texts/${encodeURIComponent(t.key)}`}
+                      href={`/bot-texts/${encodeURIComponent(row.key)}`}
                       className={buttonVariants({
                         size: "sm",
                         variant: "outline",
                       })}
                     >
-                      Edit
+                      {t("common.edit")}
                     </Link>
                   </TableCell>
                 </TableRow>
@@ -119,7 +125,7 @@ export default async function Page() {
               {sorted.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="py-10 text-center">
-                    No bot texts configured.
+                    {t("botTexts.empty")}
                   </TableCell>
                 </TableRow>
               ) : null}

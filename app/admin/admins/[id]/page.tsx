@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getServerT } from "@/lib/i18n/server";
 import { backendJson } from "@/lib/server-backend";
 
 type Admin = {
@@ -13,24 +14,37 @@ type Admin = {
   createdAt: string;
 };
 
+const formatAdminRole = (
+  value: string | null | undefined,
+  t: (key: string) => string,
+) => {
+  const v = typeof value === "string" ? value : "";
+  if (v === "admin" || v === "teacher") return t("roles.admin");
+  if (v === "super_admin") return t("roles.superAdmin");
+  return t("roles.unknown");
+};
+
 export default async function Page({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { t, locale } = await getServerT();
   const { id } = await params;
 
   let admin: Admin;
   try {
     const data = await backendJson<{ admin: Admin }>(`/api/admins/${id}`);
     admin = data.admin;
-  } catch (err) {
+  } catch {
     return (
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
         <div className="px-4 lg:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight">Admin</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("nav.admin")}
+          </h2>
           <p className="text-sm text-destructive">
-            {err instanceof Error ? err.message : "Failed to load admin"}
+            {t("admins.failedToLoadAdmin")}
           </p>
         </div>
       </div>
@@ -44,17 +58,19 @@ export default async function Page({
           <h2 className="truncate text-2xl font-semibold tracking-tight">
             {admin.name}
           </h2>
-          <p className="text-sm text-muted-foreground">Admin #{admin.id}</p>
+          <p className="text-sm text-muted-foreground">
+            {t("nav.admin")} #{admin.id}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/admins"
             className={buttonVariants({ variant: "outline" })}
           >
-            Back
+            {t("common.back")}
           </Link>
           <Link href={`/admins/edit/${admin.id}`} className={buttonVariants()}>
-            Edit
+            {t("common.edit")}
           </Link>
         </div>
       </div>
@@ -62,25 +78,33 @@ export default async function Page({
       <div className="px-4 lg:px-6">
         <Card>
           <CardHeader>
-            <CardTitle>Details</CardTitle>
+            <CardTitle>{t("common.details")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-1">
-              <div className="text-sm text-muted-foreground">Email</div>
+              <div className="text-sm text-muted-foreground">
+                {t("common.email")}
+              </div>
               <div className="text-sm">{admin.email}</div>
             </div>
 
             <div className="grid gap-1">
-              <div className="text-sm text-muted-foreground">Role</div>
+              <div className="text-sm text-muted-foreground">
+                {t("common.role")}
+              </div>
               <div>
-                <Badge variant="outline">{admin.role}</Badge>
+                <Badge variant="outline">
+                  {formatAdminRole(admin.role, t)}
+                </Badge>
               </div>
             </div>
 
             <div className="grid gap-1">
-              <div className="text-sm text-muted-foreground">Created</div>
+              <div className="text-sm text-muted-foreground">
+                {t("common.createdAt")}
+              </div>
               <div className="text-sm">
-                {new Date(admin.createdAt).toLocaleString()}
+                {new Date(admin.createdAt).toLocaleString(locale)}
               </div>
             </div>
           </CardContent>

@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getServerT } from "@/lib/i18n/server";
 import { backendJson } from "@/lib/server-backend";
 
 type GoalRow = {
@@ -23,18 +24,20 @@ type GoalRow = {
 };
 
 export default async function Page() {
+  const { t, locale } = await getServerT();
+
   let goals: GoalRow[] = [];
   try {
     const data = await backendJson<{ goals: GoalRow[] }>("/api/goals");
     goals = Array.isArray(data.goals) ? data.goals : [];
-  } catch (err) {
+  } catch {
     return (
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
         <div className="px-4 lg:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight">Goals</h2>
-          <p className="text-sm text-destructive">
-            {err instanceof Error ? err.message : "Failed to load goals"}
-          </p>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("nav.goals")}
+          </h2>
+          <p className="text-sm text-destructive">{t("goals.failedToLoad")}</p>
         </div>
       </div>
     );
@@ -44,11 +47,15 @@ export default async function Page() {
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="flex items-center justify-between gap-4 px-4 lg:px-6">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Goals</h2>
-          <p className="text-sm text-muted-foreground">{goals.length} goals</p>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("nav.goals")}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {goals.length} {t("goals.countLabel")}
+          </p>
         </div>
         <Link href="/goals/create" className={buttonVariants()}>
-          Create goal
+          {t("goals.createAction")}
         </Link>
       </div>
 
@@ -57,11 +64,13 @@ export default async function Page() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Sort</TableHead>
-                <TableHead>Updated</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("common.title")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead>{t("common.sortOrder")}</TableHead>
+                <TableHead>{t("common.updatedAt")}</TableHead>
+                <TableHead className="text-right">
+                  {t("common.actions")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -70,14 +79,14 @@ export default async function Page() {
                   <TableCell className="font-medium">{g.title}</TableCell>
                   <TableCell>
                     <Badge variant={g.isActive ? "default" : "outline"}>
-                      {g.isActive ? "Active" : "Inactive"}
+                      {g.isActive ? t("common.active") : t("common.inactive")}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-mono text-xs">
                     {g.sortOrder}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {new Date(g.updatedAt).toLocaleString()}
+                    {new Date(g.updatedAt).toLocaleString(locale)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
@@ -88,7 +97,7 @@ export default async function Page() {
                           variant: "outline",
                         })}
                       >
-                        View
+                        {t("common.view")}
                       </Link>
                       <Link
                         href={`/goals/edit/${g.id}`}
@@ -97,7 +106,7 @@ export default async function Page() {
                           variant: "outline",
                         })}
                       >
-                        Edit
+                        {t("common.edit")}
                       </Link>
                     </div>
                   </TableCell>
@@ -107,7 +116,7 @@ export default async function Page() {
               {goals.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="py-10 text-center">
-                    No goals yet.
+                    {t("goals.empty")}
                   </TableCell>
                 </TableRow>
               ) : null}

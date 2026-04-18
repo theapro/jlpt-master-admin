@@ -2,9 +2,7 @@
 
 import * as React from "react";
 
-import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
@@ -24,145 +22,10 @@ import {
   ChartBarIcon,
   FolderIcon,
   UsersIcon,
-  CameraIcon,
   FileTextIcon,
-  Settings2Icon,
-  CircleHelpIcon,
-  SearchIcon,
-  DatabaseIcon,
-  FileChartColumnIcon,
-  FileIcon,
   CommandIcon,
 } from "lucide-react";
-
-const data = {
-  navMain: [
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: <LayoutDashboardIcon />,
-    },
-    {
-      title: "Users",
-      url: "/users",
-      icon: <ListIcon />,
-    },
-    {
-      title: "Admins",
-      url: "/admins",
-      icon: <ChartBarIcon />,
-    },
-    {
-      title: "Courses",
-      url: "/courses",
-      icon: <FolderIcon />,
-    },
-    {
-      title: "Messages",
-      url: "/messages",
-      icon: <UsersIcon />,
-    },
-    {
-      title: "Goals",
-      url: "/goals",
-      icon: <FileTextIcon />,
-    },
-  ],
-  navBot: [
-    {
-      title: "Texts",
-      url: "/bot-texts",
-      icon: <FileTextIcon />,
-    },
-    {
-      title: "Buttons",
-      url: "/bot-buttons",
-      icon: <FileTextIcon />,
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: <CameraIcon />,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: <FileTextIcon />,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: <FileTextIcon />,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: <Settings2Icon />,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: <CircleHelpIcon />,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: <SearchIcon />,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: <DatabaseIcon />,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: <FileChartColumnIcon />,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: <FileIcon />,
-    },
-  ],
-};
+import { useT } from "@/components/i18n-provider";
 
 type SidebarUser = {
   name: string;
@@ -170,14 +33,70 @@ type SidebarUser = {
   avatar: string;
 };
 
-const FALLBACK_USER: SidebarUser = {
-  name: "Admin",
-  email: "",
-  avatar: "/vercel.svg",
-};
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [user, setUser] = React.useState<SidebarUser>(FALLBACK_USER);
+  const t = useT();
+
+  const [user, setUser] = React.useState<SidebarUser>({
+    name: t("nav.admin"),
+    email: "",
+    avatar: "/vercel.svg",
+  });
+
+  React.useEffect(() => {
+    setUser((prev) => (prev.email ? prev : { ...prev, name: t("nav.admin") }));
+  }, [t]);
+
+  const navMain = React.useMemo(
+    () => [
+      {
+        title: t("nav.dashboard"),
+        url: "/dashboard",
+        icon: <LayoutDashboardIcon />,
+      },
+      {
+        title: t("nav.users"),
+        url: "/users",
+        icon: <ListIcon />,
+      },
+      {
+        title: t("nav.admins"),
+        url: "/admins",
+        icon: <ChartBarIcon />,
+      },
+      {
+        title: t("nav.courses"),
+        url: "/courses",
+        icon: <FolderIcon />,
+      },
+      {
+        title: t("nav.messages"),
+        url: "/messages",
+        icon: <UsersIcon />,
+      },
+      {
+        title: t("nav.goals"),
+        url: "/goals",
+        icon: <FileTextIcon />,
+      },
+    ],
+    [t],
+  );
+
+  const navBot = React.useMemo(
+    () => [
+      {
+        title: t("nav.texts"),
+        url: "/bot-texts",
+        icon: <FileTextIcon />,
+      },
+      {
+        title: t("nav.buttons"),
+        url: "/bot-buttons",
+        icon: <FileTextIcon />,
+      },
+    ],
+    [t],
+  );
 
   React.useEffect(() => {
     let cancelled = false;
@@ -189,15 +108,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         if (!res.ok) return;
 
         const adminValue =
-          data && typeof data === "object" ? (data as any).admin : null;
+          data && typeof data === "object"
+            ? (data as Record<string, unknown>).admin
+            : null;
 
         const name =
           adminValue && typeof adminValue === "object"
-            ? (adminValue as any).name
+            ? (adminValue as Record<string, unknown>).name
             : undefined;
         const email =
           adminValue && typeof adminValue === "object"
-            ? (adminValue as any).email
+            ? (adminValue as Record<string, unknown>).email
             : undefined;
 
         if (cancelled) return;
@@ -241,16 +162,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMain} />
 
         <SidebarGroup>
-          <SidebarGroupLabel>Bot</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("nav.bot")}</SidebarGroupLabel>
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
-              {data.navBot.map((item) => (
+              {navBot.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    tooltip={`Bot: ${item.title}`}
+                    tooltip={`${t("nav.bot")}: ${item.title}`}
                     render={<a href={item.url} />}
                   >
                     {item.icon}

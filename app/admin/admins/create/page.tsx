@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getServerT } from "@/lib/i18n/server";
 import { backendJson } from "@/lib/server-backend";
 
 async function createAdminAction(formData: FormData) {
@@ -34,12 +35,9 @@ async function createAdminAction(formData: FormData) {
       method: "POST",
       body: { name, email, password, role },
     });
-  } catch (err) {
+  } catch {
     const url = new URL("/admins/create", "http://local");
-    url.searchParams.set(
-      "error",
-      err instanceof Error ? err.message : "Failed to create admin",
-    );
+    url.searchParams.set("error", "createFailed");
     redirect(url.pathname + url.search);
   }
 
@@ -52,64 +50,68 @@ export default async function Page({
 }: {
   searchParams?: Promise<{ error?: string }>;
 }) {
+  const { t } = await getServerT();
   const sp = (await searchParams) ?? {};
   const error = typeof sp.error === "string" ? sp.error : null;
+
+  const errorKey = error ? `admins.${error}` : null;
+  const translatedError = errorKey ? t(errorKey) : null;
+  const errorText =
+    translatedError && translatedError !== errorKey ? translatedError : null;
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="flex items-center justify-between gap-4 px-4 lg:px-6">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">
-            Create Admin
+            {t("admins.createAction")}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Add a new admin account.
+            {t("admins.createDescription")}
           </p>
         </div>
         <Link href="/admins" className={buttonVariants({ variant: "outline" })}>
-          Back
+          {t("common.back")}
         </Link>
       </div>
 
       <div className="px-4 lg:px-6">
         <Card className="max-w-2xl">
           <CardHeader>
-            <CardTitle>Admin details</CardTitle>
-            <CardDescription>
-              Password must be at least 8 characters.
-            </CardDescription>
+            <CardTitle>{t("common.details")}</CardTitle>
+            <CardDescription>{t("admins.passwordMinLength")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form action={createAdminAction} className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">{t("common.name")}</Label>
                 <Input id="name" name="name" required />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("common.email")}</Label>
                 <Input id="email" name="email" type="email" required />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="role">Role</Label>
+                <Label htmlFor="role">{t("common.role")}</Label>
                 <Select name="role" defaultValue="admin" required>
                   <SelectTrigger id="role" className="w-full">
-                    <SelectValue placeholder="Select role" />
+                    <SelectValue placeholder={t("common.selectRole")} />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
                     <SelectItem value="admin" className="rounded-lg">
-                      admin
+                      {t("roles.admin")}
                     </SelectItem>
                     <SelectItem value="super_admin" className="rounded-lg">
-                      super_admin
+                      {t("roles.superAdmin")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("common.password")}</Label>
                 <Input
                   id="password"
                   name="password"
@@ -119,8 +121,8 @@ export default async function Page({
                 />
               </div>
 
-              {error ? (
-                <p className="text-sm text-destructive">{error}</p>
+              {errorText ? (
+                <p className="text-sm text-destructive">{errorText}</p>
               ) : null}
 
               <div className="flex items-center justify-end gap-2">
@@ -128,9 +130,9 @@ export default async function Page({
                   href="/admins"
                   className={buttonVariants({ variant: "outline" })}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Link>
-                <Button type="submit">Create</Button>
+                <Button type="submit">{t("common.create")}</Button>
               </div>
             </form>
           </CardContent>

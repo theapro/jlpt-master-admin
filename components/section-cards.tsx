@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useT } from "@/components/i18n-provider";
 
 type DashboardStats = {
   totalUsers: number;
@@ -21,11 +22,13 @@ type DashboardStats = {
 };
 
 export function SectionCards({ stats }: { stats: DashboardStats }) {
+  const t = useT();
+
   return (
     <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total users</CardDescription>
+          <CardDescription>{t("dashboard.totalUsers")}</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {stats.totalUsers.toLocaleString()}
           </CardTitle>
@@ -33,7 +36,7 @@ export function SectionCards({ stats }: { stats: DashboardStats }) {
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Unread messages</CardDescription>
+          <CardDescription>{t("dashboard.unreadMessages")}</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {stats.unreadMessages.toLocaleString()}
           </CardTitle>
@@ -41,7 +44,9 @@ export function SectionCards({ stats }: { stats: DashboardStats }) {
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Open support requests</CardDescription>
+          <CardDescription>
+            {t("dashboard.openSupportRequests")}
+          </CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {stats.openSupportRequests.toLocaleString()}
           </CardTitle>
@@ -49,7 +54,7 @@ export function SectionCards({ stats }: { stats: DashboardStats }) {
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total courses</CardDescription>
+          <CardDescription>{t("dashboard.totalCourses")}</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {stats.totalCourses.toLocaleString()}
           </CardTitle>

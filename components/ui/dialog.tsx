@@ -4,6 +4,7 @@ import * as React from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 
 import { Button } from "@/components/ui/button";
+import { useT } from "@/components/i18n-provider";
 import { cn } from "@/lib/utils";
 import { XIcon } from "lucide-react";
 
@@ -47,6 +48,8 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
 }) {
+  const t = useT();
+
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -72,7 +75,7 @@ function DialogContent({
             }
           >
             <XIcon />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t("common.close")}</span>
           </DialogPrimitive.Close>
         ) : null}
       </DialogPrimitive.Popup>

@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getServerT } from "@/lib/i18n/server";
 import { backendJson } from "@/lib/server-backend";
 
 type Goal = {
@@ -43,12 +44,9 @@ async function updateGoalAction(id: string, formData: FormData) {
     });
 
     redirect(`/goals/${id}`);
-  } catch (err) {
+  } catch {
     const url = new URL(`/goals/edit/${id}`, "http://local");
-    url.searchParams.set(
-      "error",
-      err instanceof Error ? err.message : "Failed to update goal",
-    );
+    url.searchParams.set("error", "updateFailed");
     redirect(url.pathname + url.search);
   }
 }
@@ -60,21 +58,29 @@ export default async function Page({
   params: Promise<{ id: string }>;
   searchParams?: Promise<{ error?: string }>;
 }) {
+  const { t } = await getServerT();
   const { id } = await params;
   const sp = (await searchParams) ?? {};
   const error = typeof sp.error === "string" ? sp.error : null;
+
+  const errorKey = error ? `goals.${error}` : null;
+  const translatedError = errorKey ? t(errorKey) : null;
+  const errorText =
+    translatedError && translatedError !== errorKey ? translatedError : null;
 
   let goal: Goal;
   try {
     const data = await backendJson<{ goal: Goal }>(`/api/goals/${id}`);
     goal = data.goal;
-  } catch (err) {
+  } catch {
     return (
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
         <div className="px-4 lg:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight">Edit Goal</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("goals.editAction")}
+          </h2>
           <p className="text-sm text-destructive">
-            {err instanceof Error ? err.message : "Failed to load goal"}
+            {t("goals.failedToLoadGoal")}
           </p>
         </div>
       </div>
@@ -85,24 +91,26 @@ export default async function Page({
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="flex items-center justify-between gap-4 px-4 lg:px-6">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Edit Goal</h2>
-          <p className="text-sm text-muted-foreground">Goal #{goal.id}</p>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("goals.editAction")}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {t("common.goal")} #{goal.id}
+          </p>
         </div>
         <Link
           href={`/goals/${goal.id}`}
           className={buttonVariants({ variant: "outline" })}
         >
-          Back
+          {t("common.back")}
         </Link>
       </div>
 
       <div className="px-4 lg:px-6">
         <Card className="max-w-2xl">
           <CardHeader>
-            <CardTitle>Goal details</CardTitle>
-            <CardDescription>
-              Update the title, status and sort order.
-            </CardDescription>
+            <CardTitle>{t("common.details")}</CardTitle>
+            <CardDescription>{t("goals.editDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -110,7 +118,7 @@ export default async function Page({
               className="grid gap-4"
             >
               <div className="grid gap-2">
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title">{t("common.title")}</Label>
                 <Input
                   id="title"
                   name="title"
@@ -120,28 +128,28 @@ export default async function Page({
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="isActive">Status</Label>
+                <Label htmlFor="isActive">{t("common.status")}</Label>
                 <Select
                   name="isActive"
                   defaultValue={goal.isActive ? "true" : "false"}
                   required
                 >
                   <SelectTrigger id="isActive" className="w-full">
-                    <SelectValue placeholder="Select status" />
+                    <SelectValue placeholder={t("common.selectStatus")} />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
                     <SelectItem value="true" className="rounded-lg">
-                      Active
+                      {t("common.active")}
                     </SelectItem>
                     <SelectItem value="false" className="rounded-lg">
-                      Inactive
+                      {t("common.inactive")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="sortOrder">Sort order</Label>
+                <Label htmlFor="sortOrder">{t("common.sortOrder")}</Label>
                 <Input
                   id="sortOrder"
                   name="sortOrder"
@@ -150,12 +158,12 @@ export default async function Page({
                   defaultValue={String(goal.sortOrder)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Lower numbers appear first.
+                  {t("goals.sortHint")}
                 </p>
               </div>
 
-              {error ? (
-                <p className="text-sm text-destructive">{error}</p>
+              {errorText ? (
+                <p className="text-sm text-destructive">{errorText}</p>
               ) : null}
 
               <div className="flex items-center justify-end gap-2">
@@ -163,9 +171,9 @@ export default async function Page({
                   href={`/goals/${goal.id}`}
                   className={buttonVariants({ variant: "outline" })}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Link>
-                <Button type="submit">Save</Button>
+                <Button type="submit">{t("common.save")}</Button>
               </div>
             </form>
           </CardContent>

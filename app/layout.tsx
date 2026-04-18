@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { I18nProvider } from "@/components/i18n-provider";
+import { getServerT } from "@/lib/i18n/server";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,21 +22,25 @@ export const metadata: Metadata = {
   description: "Admin panel for JLPT Master Telegram bot",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { locale, messages } = await getServerT();
+
   return (
     <html
-      lang="en"
+      lang={locale}
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           <TooltipProvider>
-            {children}
+            <I18nProvider locale={locale} messages={messages}>
+              {children}
+            </I18nProvider>
             <Toaster />
           </TooltipProvider>
         </ThemeProvider>

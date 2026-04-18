@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getServerT } from "@/lib/i18n/server";
 import { backendJson } from "@/lib/server-backend";
 
 async function createCourseAction(formData: FormData) {
@@ -27,12 +28,9 @@ async function createCourseAction(formData: FormData) {
       method: "POST",
       body: { title, description, duration },
     });
-  } catch (err) {
+  } catch {
     const url = new URL("/courses/create", "http://local");
-    url.searchParams.set(
-      "error",
-      err instanceof Error ? err.message : "Failed to create course",
-    );
+    url.searchParams.set("error", "createFailed");
     redirect(url.pathname + url.search);
   }
 
@@ -45,56 +43,62 @@ export default async function Page({
 }: {
   searchParams?: Promise<{ error?: string }>;
 }) {
+  const { t } = await getServerT();
   const sp = (await searchParams) ?? {};
   const error = typeof sp.error === "string" ? sp.error : null;
+
+  const errorKey = error ? `courses.${error}` : null;
+  const translatedError = errorKey ? t(errorKey) : null;
+  const errorText =
+    translatedError && translatedError !== errorKey ? translatedError : null;
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="flex items-center justify-between gap-4 px-4 lg:px-6">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">
-            Create Course
+            {t("courses.createAction")}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Add a new course to the catalog.
+            {t("courses.createDescription")}
           </p>
         </div>
         <Link
           href="/courses"
           className={buttonVariants({ variant: "outline" })}
         >
-          Back
+          {t("common.back")}
         </Link>
       </div>
 
       <div className="px-4 lg:px-6">
         <Card className="max-w-2xl">
           <CardHeader>
-            <CardTitle>Course details</CardTitle>
-            <CardDescription>
-              All fields except duration are required.
-            </CardDescription>
+            <CardTitle>{t("common.details")}</CardTitle>
+            <CardDescription>{t("courses.createRequirements")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form action={createCourseAction} className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title">{t("common.title")}</Label>
                 <Input id="title" name="title" required />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="duration">Duration (months)</Label>
+                <Label htmlFor="duration">
+                  {t("common.duration")} ({t("courses.monthUnitLong")})
+                </Label>
                 <Input
                   id="duration"
                   name="duration"
                   type="number"
                   min={1}
-                  placeholder="Optional"
+                  placeholder={t("common.optional")}
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t("common.description")}</Label>
                 <textarea
                   id="description"
                   name="description"
@@ -104,8 +108,8 @@ export default async function Page({
                 />
               </div>
 
-              {error ? (
-                <p className="text-sm text-destructive">{error}</p>
+              {errorText ? (
+                <p className="text-sm text-destructive">{errorText}</p>
               ) : null}
 
               <div className="flex items-center justify-end gap-2">
@@ -113,9 +117,9 @@ export default async function Page({
                   href="/courses"
                   className={buttonVariants({ variant: "outline" })}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Link>
-                <Button type="submit">Create</Button>
+                <Button type="submit">{t("common.create")}</Button>
               </div>
             </form>
           </CardContent>

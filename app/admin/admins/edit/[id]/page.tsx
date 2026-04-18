@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getServerT } from "@/lib/i18n/server";
 import { backendJson } from "@/lib/server-backend";
 
 type Admin = {
@@ -44,12 +45,9 @@ async function updateAdminAction(id: string, formData: FormData) {
       method: "PATCH",
       body,
     });
-  } catch (err) {
+  } catch {
     const url = new URL(`/admins/edit/${id}`, "http://local");
-    url.searchParams.set(
-      "error",
-      err instanceof Error ? err.message : "Failed to update admin",
-    );
+    url.searchParams.set("error", "updateFailed");
     redirect(url.pathname + url.search);
   }
 
@@ -64,22 +62,30 @@ export default async function Page({
   params: Promise<{ id: string }>;
   searchParams?: Promise<{ error?: string }>;
 }) {
+  const { t } = await getServerT();
   const { id } = await params;
 
   const sp = (await searchParams) ?? {};
   const error = typeof sp.error === "string" ? sp.error : null;
 
+  const errorKey = error ? `admins.${error}` : null;
+  const translatedError = errorKey ? t(errorKey) : null;
+  const errorText =
+    translatedError && translatedError !== errorKey ? translatedError : null;
+
   let admin: Admin;
   try {
     const data = await backendJson<{ admin: Admin }>(`/api/admins/${id}`);
     admin = data.admin;
-  } catch (err) {
+  } catch {
     return (
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
         <div className="px-4 lg:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight">Edit Admin</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("admins.editAction")}
+          </h2>
           <p className="text-sm text-destructive">
-            {err instanceof Error ? err.message : "Failed to load admin"}
+            {t("admins.failedToLoadAdmin")}
           </p>
         </div>
       </div>
@@ -92,24 +98,26 @@ export default async function Page({
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="flex items-center justify-between gap-4 px-4 lg:px-6">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Edit Admin</h2>
-          <p className="text-sm text-muted-foreground">Admin #{admin.id}</p>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("admins.editAction")}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {t("nav.admin")} #{admin.id}
+          </p>
         </div>
         <Link
           href={`/admins/${admin.id}`}
           className={buttonVariants({ variant: "outline" })}
         >
-          Back
+          {t("common.back")}
         </Link>
       </div>
 
       <div className="px-4 lg:px-6">
         <Card className="max-w-2xl">
           <CardHeader>
-            <CardTitle>Admin details</CardTitle>
-            <CardDescription>
-              Leave password empty to keep it unchanged.
-            </CardDescription>
+            <CardTitle>{t("common.details")}</CardTitle>
+            <CardDescription>{t("admins.passwordOptional")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -117,7 +125,7 @@ export default async function Page({
               className="grid gap-4"
             >
               <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">{t("common.name")}</Label>
                 <Input
                   id="name"
                   name="name"
@@ -127,7 +135,7 @@ export default async function Page({
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("common.email")}</Label>
                 <Input
                   id="email"
                   name="email"
@@ -138,35 +146,35 @@ export default async function Page({
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="role">Role</Label>
+                <Label htmlFor="role">{t("common.role")}</Label>
                 <Select name="role" defaultValue={role} required>
                   <SelectTrigger id="role" className="w-full">
-                    <SelectValue placeholder="Select role" />
+                    <SelectValue placeholder={t("common.selectRole")} />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
                     <SelectItem value="admin" className="rounded-lg">
-                      admin
+                      {t("roles.admin")}
                     </SelectItem>
                     <SelectItem value="super_admin" className="rounded-lg">
-                      super_admin
+                      {t("roles.superAdmin")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="password">New password</Label>
+                <Label htmlFor="password">{t("common.newPassword")}</Label>
                 <Input
                   id="password"
                   name="password"
                   type="password"
                   minLength={8}
-                  placeholder="Optional"
+                  placeholder={t("common.optional")}
                 />
               </div>
 
-              {error ? (
-                <p className="text-sm text-destructive">{error}</p>
+              {errorText ? (
+                <p className="text-sm text-destructive">{errorText}</p>
               ) : null}
 
               <div className="flex items-center justify-end gap-2">
@@ -174,9 +182,9 @@ export default async function Page({
                   href={`/admins/${admin.id}`}
                   className={buttonVariants({ variant: "outline" })}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Link>
-                <Button type="submit">Save</Button>
+                <Button type="submit">{t("common.save")}</Button>
               </div>
             </form>
           </CardContent>

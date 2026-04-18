@@ -33,6 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useI18n, useT } from "@/components/i18n-provider";
 import { cn } from "@/lib/utils";
 
 type ChatMessage = {
@@ -124,6 +125,9 @@ export function ChatWindow({
   onMarkedRead?: (telegramId: string) => void;
   onSupportStatusChanged?: (telegramId: string, status: SupportStatus) => void;
 }) {
+  const t = useT();
+  const { locale } = useI18n();
+
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [hasMore, setHasMore] = React.useState(false);
   const [loadingOlder, setLoadingOlder] = React.useState(false);
@@ -182,14 +186,17 @@ export function ChatWindow({
     el.scrollTo({ top: el.scrollHeight, behavior });
   }, []);
 
-  const formatMessageTime = React.useCallback((iso: string) => {
-    const d = new Date(iso);
-    if (!Number.isFinite(d.getTime())) return "";
-    return d.toLocaleString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }, []);
+  const formatMessageTime = React.useCallback(
+    (iso: string) => {
+      const d = new Date(iso);
+      if (!Number.isFinite(d.getTime())) return "";
+      return d.toLocaleTimeString(locale, {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    },
+    [locale],
+  );
 
   const computeIsAtBottom = React.useCallback(() => {
     const el = scrollRef.current;
@@ -490,25 +497,16 @@ export function ChatWindow({
       );
 
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as unknown;
-        const messageValue =
-          data && typeof data === "object"
-            ? (data as { message?: unknown }).message
-            : undefined;
-        const msg =
-          typeof messageValue === "string" && messageValue.trim().length > 0
-            ? messageValue
-            : "Failed to close chat";
-        setError(msg);
+        setError(t("messages.closeChatFailed"));
         return;
       }
 
       setLocalSupportStatus("closed");
       onSupportStatusChanged?.(telegramId, "closed");
     } catch {
-      setError("Network error");
+      setError(t("messages.networkError"));
     }
-  }, [localSupportStatus, onSupportStatusChanged, telegramId, userId]);
+  }, [localSupportStatus, onSupportStatusChanged, t, telegramId, userId]);
 
   const doSend = React.useCallback(async () => {
     const message = text.trim();
@@ -525,16 +523,7 @@ export function ChatWindow({
       });
 
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as unknown;
-        const messageValue =
-          data && typeof data === "object"
-            ? (data as { message?: unknown }).message
-            : undefined;
-        const msg =
-          typeof messageValue === "string" && messageValue.trim().length > 0
-            ? messageValue
-            : "Failed to send message";
-        setError(msg);
+        setError(t("messages.sendFailed"));
         return;
       }
 
@@ -544,7 +533,7 @@ export function ChatWindow({
       await loadLatestMessages();
       scrollToBottom("smooth");
     } catch {
-      setError("Network error");
+      setError(t("messages.networkError"));
     } finally {
       setSending(false);
     }
@@ -552,6 +541,7 @@ export function ChatWindow({
     loadLatestMessages,
     onSupportStatusChanged,
     scrollToBottom,
+    t,
     telegramId,
     text,
   ]);
@@ -592,25 +582,21 @@ export function ChatWindow({
 
       const data = (await res.json().catch(() => null)) as unknown;
       if (!res.ok) {
-        const messageValue =
-          data && typeof data === "object"
-            ? (data as { message?: unknown }).message
-            : undefined;
-        const msg =
-          typeof messageValue === "string" && messageValue.trim().length > 0
-            ? messageValue
-            : "Failed to edit message";
-        setError(msg);
+        setError(t("messages.editFailed"));
         return;
       }
 
       const updated =
-        data && typeof data === "object" ? (data as any).message : null;
+        data && typeof data === "object"
+          ? (data as Record<string, unknown>).message
+          : null;
       const updatedText =
-        updated && typeof updated === "object" ? (updated as any).text : null;
+        updated && typeof updated === "object"
+          ? (updated as Record<string, unknown>).text
+          : null;
       const editedAt =
         updated && typeof updated === "object"
-          ? (updated as any).editedAt
+          ? (updated as Record<string, unknown>).editedAt
           : null;
 
       setMessages((prev) =>
@@ -628,11 +614,11 @@ export function ChatWindow({
       setEditingMessageId(null);
       setText("");
     } catch {
-      setError("Network error");
+      setError(t("messages.networkError"));
     } finally {
       setSavingEdit(false);
     }
-  }, [editingMessageId, text]);
+  }, [editingMessageId, t, text]);
 
   const openDelete = React.useCallback((messageId: number) => {
     setDeleteTargetId(messageId);
@@ -651,18 +637,8 @@ export function ChatWindow({
         `/api/messages/message/${encodeURIComponent(String(messageId))}/hide`,
         { method: "POST" },
       );
-
-      const data = (await res.json().catch(() => null)) as unknown;
       if (!res.ok) {
-        const messageValue =
-          data && typeof data === "object"
-            ? (data as { message?: unknown }).message
-            : undefined;
-        const msg =
-          typeof messageValue === "string" && messageValue.trim().length > 0
-            ? messageValue
-            : "Failed to delete for me";
-        setError(msg);
+        setError(t("messages.deleteForMeFailed"));
         return;
       }
 
@@ -678,11 +654,11 @@ export function ChatWindow({
       setDeleteOpen(false);
       setDeleteTargetId(null);
     } catch {
-      setError("Network error");
+      setError(t("messages.networkError"));
     } finally {
       setDeleteBusy(null);
     }
-  }, [deleteTargetId, editingMessageId]);
+  }, [deleteTargetId, editingMessageId, t]);
 
   const doDeleteForEveryone = React.useCallback(async () => {
     if (deleteTargetId === null) return;
@@ -699,15 +675,7 @@ export function ChatWindow({
 
       const data = (await res.json().catch(() => null)) as unknown;
       if (!res.ok) {
-        const messageValue =
-          data && typeof data === "object"
-            ? (data as { message?: unknown }).message
-            : undefined;
-        const msg =
-          typeof messageValue === "string" && messageValue.trim().length > 0
-            ? messageValue
-            : "Failed to delete for everyone";
-        setError(msg);
+        setError(t("messages.deleteForEveryoneFailed"));
         return;
       }
 
@@ -717,10 +685,12 @@ export function ChatWindow({
       }
 
       const updated =
-        data && typeof data === "object" ? (data as any).message : null;
+        data && typeof data === "object"
+          ? (data as Record<string, unknown>).message
+          : null;
       const deletedAt =
         updated && typeof updated === "object"
-          ? (updated as any).deletedAt
+          ? (updated as Record<string, unknown>).deletedAt
           : null;
 
       setMessages((prev) =>
@@ -740,11 +710,11 @@ export function ChatWindow({
       setDeleteOpen(false);
       setDeleteTargetId(null);
     } catch {
-      setError("Network error");
+      setError(t("messages.networkError"));
     } finally {
       setDeleteBusy(null);
     }
-  }, [deleteTargetId, editingMessageId]);
+  }, [deleteTargetId, editingMessageId, t]);
 
   const onSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -769,22 +739,34 @@ export function ChatWindow({
             chatStatus === "IN_PROGRESS" ? (
               <Badge variant="secondary">
                 <CircleDotIcon />
-                <span>In progress</span>
+                <span>{t("supportStatus.active")}</span>
               </Badge>
             ) : chatStatus === "UNREAD" ? (
-              <Badge variant="outline" className="px-1.5" title="Unread">
+              <Badge
+                variant="outline"
+                className="px-1.5"
+                title={t("messages.unread")}
+              >
                 <MailIcon />
-                <span className="sr-only">Unread</span>
+                <span className="sr-only">{t("messages.unread")}</span>
               </Badge>
             ) : chatStatus === "READ" ? (
-              <Badge variant="outline" className="px-1.5" title="Read">
+              <Badge
+                variant="outline"
+                className="px-1.5"
+                title={t("messages.read")}
+              >
                 <MailOpenIcon />
-                <span className="sr-only">Read</span>
+                <span className="sr-only">{t("messages.read")}</span>
               </Badge>
             ) : (
-              <Badge variant="outline" className="px-1.5" title="Closed">
+              <Badge
+                variant="outline"
+                className="px-1.5"
+                title={t("supportStatus.closed")}
+              >
                 <LockIcon />
-                <span className="sr-only">Closed</span>
+                <span className="sr-only">{t("supportStatus.closed")}</span>
               </Badge>
             )
           ) : null}
@@ -794,7 +776,7 @@ export function ChatWindow({
               href={viewUserHref}
               className={buttonVariants({ variant: "outline", size: "sm" })}
             >
-              View user
+              {t("messages.viewUser")}
             </Link>
           ) : null}
 
@@ -805,7 +787,7 @@ export function ChatWindow({
             onClick={() => void loadLatestMessages()}
             disabled={sending || loadingLatest}
           >
-            Mark read
+            {t("messages.markRead")}
           </Button>
 
           <Button
@@ -815,7 +797,7 @@ export function ChatWindow({
             onClick={() => void closeChat()}
             disabled={!userId || localSupportStatus === "closed"}
           >
-            Close
+            {t("messages.closeChat")}
           </Button>
         </div>
       </div>
@@ -828,7 +810,7 @@ export function ChatWindow({
         <div className="flex flex-col gap-1.5">
           {loadingOlder ? (
             <div className="py-2 text-center text-xs text-muted-foreground">
-              Loading...
+              {t("common.loading")}
             </div>
           ) : null}
 
@@ -840,7 +822,7 @@ export function ChatWindow({
                 size="sm"
                 onClick={() => void loadOlderMessages()}
               >
-                Load older
+                {t("messages.loadOlder")}
               </Button>
             </div>
           ) : null}
@@ -877,7 +859,7 @@ export function ChatWindow({
                       m.sender === "admin" ? "justify-end" : "justify-start",
                     )}
                   >
-                    {m.editedAt ? <span>edited</span> : null}
+                    {m.editedAt ? <span>{t("messages.edited")}</span> : null}
                     <span>{formatMessageTime(m.createdAt)}</span>
 
                     <DropdownMenu>
@@ -892,7 +874,9 @@ export function ChatWindow({
                         }
                       >
                         <EllipsisVerticalIcon />
-                        <span className="sr-only">Message actions</span>
+                        <span className="sr-only">
+                          {t("messages.messageActions")}
+                        </span>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
                         align={m.sender === "admin" ? "end" : "start"}
@@ -901,7 +885,7 @@ export function ChatWindow({
                           <>
                             <DropdownMenuItem onClick={() => startEdit(m)}>
                               <PencilIcon />
-                              Edit
+                              {t("common.edit")}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                           </>
@@ -911,7 +895,7 @@ export function ChatWindow({
                           onClick={() => openDelete(m.id)}
                         >
                           <Trash2Icon />
-                          Delete
+                          {t("common.delete")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -933,7 +917,7 @@ export function ChatWindow({
               variant="outline"
               onClick={() => scrollToBottom("smooth")}
             >
-              New messages
+              {t("messages.newMessages")}
             </Button>
           </div>
         ) : null}
@@ -941,7 +925,9 @@ export function ChatWindow({
         {editingMessageId !== null ? (
           <div className="mb-2 flex items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2">
             <div className="min-w-0">
-              <p className="text-xs font-medium">Editing message</p>
+              <p className="text-xs font-medium">
+                {t("messages.editingMessage")}
+              </p>
             </div>
             <Button
               type="button"
@@ -950,7 +936,7 @@ export function ChatWindow({
               onClick={cancelEdit}
               disabled={savingEdit || sending}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
           </div>
         ) : null}
@@ -972,7 +958,7 @@ export function ChatWindow({
                   void doSend();
                 }
               }}
-              placeholder="Type a message..."
+              placeholder={t("messages.typeMessagePlaceholder")}
               disabled={sending || savingEdit}
               rows={2}
               className="max-h-32 min-h-10 w-full resize-none bg-transparent px-1 py-1 text-sm outline-none placeholder:text-muted-foreground"
@@ -984,7 +970,7 @@ export function ChatWindow({
             className="h-10"
             disabled={sending || savingEdit || text.trim().length === 0}
           >
-            {editingMessageId !== null ? "Save" : "Send"}
+            {editingMessageId !== null ? t("common.save") : t("messages.send")}
           </Button>
         </form>
         {error ? (
@@ -995,9 +981,9 @@ export function ChatWindow({
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete message</DialogTitle>
+            <DialogTitle>{t("messages.deleteMessageTitle")}</DialogTitle>
             <DialogDescription>
-              Choose whether to delete only for you or for everyone.
+              {t("messages.deleteMessageDescription")}
             </DialogDescription>
           </DialogHeader>
 
@@ -1008,7 +994,7 @@ export function ChatWindow({
               onClick={() => setDeleteOpen(false)}
               disabled={deleteBusy !== null}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="button"
@@ -1016,7 +1002,7 @@ export function ChatWindow({
               onClick={() => void doHideForMe()}
               disabled={deleteTargetId === null || deleteBusy !== null}
             >
-              Delete for me
+              {t("messages.deleteForMe")}
             </Button>
             <Button
               type="button"
@@ -1024,7 +1010,7 @@ export function ChatWindow({
               onClick={() => void doDeleteForEveryone()}
               disabled={deleteTargetId === null || deleteBusy !== null}
             >
-              Delete for everyone
+              {t("messages.deleteForEveryone")}
             </Button>
           </DialogFooter>
         </DialogContent>

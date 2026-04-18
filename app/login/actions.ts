@@ -38,7 +38,7 @@ export async function loginAction(formData: FormData) {
 
   if (!res.ok) {
     const url = new URL("/login", "http://local");
-    url.searchParams.set("error", "Invalid email or password");
+    url.searchParams.set("error", "invalidEmailOrPassword");
     if (next) url.searchParams.set("next", next);
     redirect(url.pathname + url.search);
   }
@@ -48,7 +48,7 @@ export async function loginAction(formData: FormData) {
 
   if (!token) {
     const url = new URL("/login", "http://local");
-    url.searchParams.set("error", "Login failed");
+    url.searchParams.set("error", "loginFailed");
     if (next) url.searchParams.set("next", next);
     redirect(url.pathname + url.search);
   }
@@ -63,4 +63,54 @@ export async function loginAction(formData: FormData) {
   });
 
   redirect(isSafeNextPath(next) ? next : "/dashboard");
+}
+
+export async function googleLoginAction(
+  credential: string,
+  next = "/dashboard",
+) {
+  const safeNext = isSafeNextPath(next) ? next : "/dashboard";
+  const credentialSafe = typeof credential === "string" ? credential : "";
+
+  if (!credentialSafe || credentialSafe.trim().length === 0) {
+    const url = new URL("/login", "http://local");
+    url.searchParams.set("error", "googleLoginFailed");
+    url.searchParams.set("next", safeNext);
+    redirect(url.pathname + url.search);
+  }
+
+  const res = await fetch(`${getBackendUrl()}/api/admin/google/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ credential: credentialSafe }),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const url = new URL("/login", "http://local");
+    url.searchParams.set("error", "googleLoginFailed");
+    url.searchParams.set("next", safeNext);
+    redirect(url.pathname + url.search);
+  }
+
+  const data = (await res.json()) as { token?: string };
+  const token = typeof data.token === "string" ? data.token : null;
+
+  if (!token) {
+    const url = new URL("/login", "http://local");
+    url.searchParams.set("error", "googleLoginFailed");
+    url.searchParams.set("next", safeNext);
+    redirect(url.pathname + url.search);
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set(ADMIN_TOKEN_COOKIE, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
+
+  redirect(safeNext);
 }
