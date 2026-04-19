@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 
 import { Button } from "@/components/ui/button";
 import {

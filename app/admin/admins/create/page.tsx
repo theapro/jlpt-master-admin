@@ -21,6 +21,11 @@ import {
 import { getServerT } from "@/lib/i18n/server";
 import { backendJson } from "@/lib/server-backend";
 
+type CurrentAdmin = {
+  id: number;
+  role: string;
+};
+
 async function createAdminAction(formData: FormData) {
   "use server";
 
@@ -51,6 +56,17 @@ export default async function Page({
   searchParams?: Promise<{ error?: string }>;
 }) {
   const { t } = await getServerT();
+
+  let isSuperAdmin = false;
+  try {
+    const data = await backendJson<{ admin: CurrentAdmin }>("/api/admin/me");
+    isSuperAdmin = data.admin.role === "super_admin";
+  } catch {
+    isSuperAdmin = false;
+  }
+
+  if (!isSuperAdmin) redirect("/admins");
+
   const sp = (await searchParams) ?? {};
   const error = typeof sp.error === "string" ? sp.error : null;
 

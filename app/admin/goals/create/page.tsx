@@ -25,15 +25,12 @@ async function createGoalAction(formData: FormData) {
   "use server";
 
   const title = String(formData.get("title") ?? "").trim();
-  const sortOrderRaw = String(formData.get("sortOrder") ?? "").trim();
   const isActive = String(formData.get("isActive") ?? "true").trim();
-
-  const sortOrder = sortOrderRaw.length > 0 ? sortOrderRaw : 0;
 
   try {
     const data = await backendJson<{ goal: { id: number } }>("/api/goals", {
       method: "POST",
-      body: { title, sortOrder, isActive },
+      body: { title, isActive },
     });
 
     redirect(`/goals/${data.goal.id}`);
@@ -102,20 +99,6 @@ export default async function Page({
                     </SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="sortOrder">{t("common.sortOrder")}</Label>
-                <Input
-                  id="sortOrder"
-                  name="sortOrder"
-                  type="number"
-                  step="1"
-                  placeholder="0"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t("goals.sortHint")}
-                </p>
               </div>
 
               {errorText ? (

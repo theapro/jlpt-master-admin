@@ -39,6 +39,7 @@
     "group": "グループ",
     "value": "値",
     "username": "ユーザー名",
+    "telegramNickname": "Telegram ニックネーム",
     "phone": "電話",
     "goal": "目標",
     "role": "権限",
@@ -114,6 +115,7 @@
     "editAction": "管理者を編集",
     "passwordOptional": "パスワードを空欄にすると変更されません。",
     "updateFailed": "管理者の更新に失敗しました",
+    "deleteFailed": "管理者の削除に失敗しました",
     "empty": "管理者はいません。"
   },
   "courses": {
@@ -223,6 +225,8 @@
     "noButtonsForState": "この状態にはボタンがありません。",
     "editButtonsTitle": "ボタンを編集",
     "editButtonsDescription": "ドラッグ＆ドロップで順番を変更できます。ボタンをクリックしてテキストを編集します。",
+    "orderOnlyDescription": "ドラッグ＆ドロップで順番を変更できます。",
+    "orderOnlyHint": "この状態では並び順のみ変更できます。テキストは目標/コースから取得されます。",
     "buttonTextLabel": "ボタンのテキスト",
     "enterTextPlaceholder": "テキストを入力",
     "selectButtonPlaceholder": "ボタンを選択",

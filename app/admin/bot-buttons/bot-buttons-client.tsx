@@ -192,6 +192,8 @@ export function BotButtonsClient() {
   const [saving, setSaving] = React.useState(false);
   const [editErrorKey, setEditErrorKey] = React.useState<string | null>(null);
 
+  const isOrderOnlyState = state === "ASK_GOAL" || state === "SELECT_COURSE";
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
@@ -314,12 +316,14 @@ export function BotButtonsClient() {
   const onSave = async () => {
     setEditErrorKey(null);
 
-    const trimmedInvalid = draftButtons.some(
-      (b) => typeof b.label !== "string" || b.label.trim().length === 0,
-    );
-    if (trimmedInvalid) {
-      setEditErrorKey("botButtons.buttonTextCannotBeEmpty");
-      return;
+    if (!isOrderOnlyState) {
+      const trimmedInvalid = draftButtons.some(
+        (b) => typeof b.label !== "string" || b.label.trim().length === 0,
+      );
+      if (trimmedInvalid) {
+        setEditErrorKey("botButtons.buttonTextCannotBeEmpty");
+        return;
+      }
     }
 
     const positioned = applyGridPositions(draftButtons).map((b) => ({
@@ -331,6 +335,9 @@ export function BotButtonsClient() {
     const updates = positioned.filter((b) => {
       const orig = originalById.get(b.id);
       if (!orig) return true;
+      if (isOrderOnlyState) {
+        return orig.row !== b.row || orig.col !== b.col;
+      }
       return orig.label !== b.label || orig.row !== b.row || orig.col !== b.col;
     });
 
@@ -383,7 +390,12 @@ export function BotButtonsClient() {
       }
 
       for (const u of updates) {
-        await putUpdate(u.id, { label: u.label, row: u.row, col: u.col });
+        await putUpdate(
+          u.id,
+          isOrderOnlyState
+            ? { row: u.row, col: u.col }
+            : { label: u.label, row: u.row, col: u.col },
+        );
       }
 
       setEditOpen(false);
@@ -472,7 +484,9 @@ export function BotButtonsClient() {
           <DialogHeader>
             <DialogTitle>{t("botButtons.editButtonsTitle")}</DialogTitle>
             <DialogDescription>
-              {t("botButtons.editButtonsDescription")}
+              {isOrderOnlyState
+                ? t("botButtons.orderOnlyDescription")
+                : t("botButtons.editButtonsDescription")}
             </DialogDescription>
           </DialogHeader>
 
@@ -504,22 +518,28 @@ export function BotButtonsClient() {
               </SortableContext>
             </DndContext>
 
-            <div className="grid gap-2">
-              <Label htmlFor="edit-label">
-                {t("botButtons.buttonTextLabel")}
-              </Label>
-              <Input
-                id="edit-label"
-                value={selected?.label ?? ""}
-                onChange={(e) => updateSelectedLabel(e.target.value)}
-                placeholder={
-                  selected
-                    ? t("botButtons.enterTextPlaceholder")
-                    : t("botButtons.selectButtonPlaceholder")
-                }
-                disabled={!selected}
-              />
-            </div>
+            {isOrderOnlyState ? (
+              <p className="text-xs text-muted-foreground">
+                {t("botButtons.orderOnlyHint")}
+              </p>
+            ) : (
+              <div className="grid gap-2">
+                <Label htmlFor="edit-label">
+                  {t("botButtons.buttonTextLabel")}
+                </Label>
+                <Input
+                  id="edit-label"
+                  value={selected?.label ?? ""}
+                  onChange={(e) => updateSelectedLabel(e.target.value)}
+                  placeholder={
+                    selected
+                      ? t("botButtons.enterTextPlaceholder")
+                      : t("botButtons.selectButtonPlaceholder")
+                  }
+                  disabled={!selected}
+                />
+              </div>
+            )}
 
             {editErrorKey ? (
               <p className="text-sm text-destructive">{t(editErrorKey)}</p>

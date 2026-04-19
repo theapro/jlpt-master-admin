@@ -39,6 +39,7 @@
     "group": "Guruh",
     "value": "Qiymat",
     "username": "Foydalanuvchi nomi",
+    "telegramNickname": "Telegram nik",
     "phone": "Telefon",
     "goal": "Maqsad",
     "role": "Rol",
@@ -114,6 +115,7 @@
     "editAction": "Adminni tahrirlash",
     "passwordOptional": "Parolni bo‘sh qoldirsangiz, u o‘zgarmaydi.",
     "updateFailed": "Adminni yangilab bo‘lmadi",
+    "deleteFailed": "Adminni o‘chirib bo‘lmadi",
     "empty": "Adminlar yo‘q."
   },
   "courses": {
@@ -223,6 +225,8 @@
     "noButtonsForState": "Bu holat uchun tugmalar yo‘q.",
     "editButtonsTitle": "Tugmalarni tahrirlash",
     "editButtonsDescription": "Tartibni o‘zgartirish uchun sudrab qo‘ying. Matnini tahrirlash uchun tugmani bosing.",
+    "orderOnlyDescription": "Tartibni o‘zgartirish uchun sudrab qo‘ying.",
+    "orderOnlyHint": "Bu holatda faqat tartibni o‘zgartirish mumkin. Matn goals/courses dan olinadi.",
     "buttonTextLabel": "Tugma matni",
     "enterTextPlaceholder": "Matn kiriting",
     "selectButtonPlaceholder": "Tugmani tanlang",

@@ -18,7 +18,6 @@ type GoalRow = {
   id: number;
   title: string;
   isActive: boolean;
-  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -66,7 +65,6 @@ export default async function Page() {
               <TableRow>
                 <TableHead>{t("common.title")}</TableHead>
                 <TableHead>{t("common.status")}</TableHead>
-                <TableHead>{t("common.sortOrder")}</TableHead>
                 <TableHead>{t("common.updatedAt")}</TableHead>
                 <TableHead className="text-right">
                   {t("common.actions")}
@@ -81,9 +79,6 @@ export default async function Page() {
                     <Badge variant={g.isActive ? "default" : "outline"}>
                       {g.isActive ? t("common.active") : t("common.inactive")}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {g.sortOrder}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(g.updatedAt).toLocaleString(locale)}
@@ -115,7 +110,7 @@ export default async function Page() {
 
               {goals.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center">
+                  <TableCell colSpan={4} className="py-10 text-center">
                     {t("goals.empty")}
                   </TableCell>
                 </TableRow>

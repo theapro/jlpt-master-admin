@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getServerT } from "@/lib/i18n/server";
 import { backendJson } from "@/lib/server-backend";
@@ -13,6 +14,27 @@ type Admin = {
   role: string;
   createdAt: string;
 };
+
+type CurrentAdmin = {
+  id: number;
+  role: string;
+};
+
+async function deleteAdminAction(id: string) {
+  "use server";
+
+  try {
+    await backendJson<{ admin: { id: number } }>(`/api/admins/${id}`, {
+      method: "DELETE",
+    });
+  } catch {
+    const url = new URL(`/admins/${id}`, "http://local");
+    url.searchParams.set("error", "deleteFailed");
+    redirect(url.pathname + url.search);
+  }
+
+  redirect("/admins");
+}
 
 const formatAdminRole = (
   value: string | null | undefined,
@@ -26,11 +48,30 @@ const formatAdminRole = (
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ error?: string }>;
 }) {
   const { t, locale } = await getServerT();
   const { id } = await params;
+
+  const sp = (await searchParams) ?? {};
+  const error = typeof sp.error === "string" ? sp.error : null;
+  const errorKey = error ? `admins.${error}` : null;
+  const translatedError = errorKey ? t(errorKey) : null;
+  const errorText =
+    translatedError && translatedError !== errorKey ? translatedError : null;
+
+  let currentAdmin: CurrentAdmin | null = null;
+  try {
+    const data = await backendJson<{ admin: CurrentAdmin }>("/api/admin/me");
+    currentAdmin = data.admin;
+  } catch {
+    currentAdmin = null;
+  }
+
+  const isSuperAdmin = currentAdmin?.role === "super_admin";
 
   let admin: Admin;
   try {
@@ -61,6 +102,9 @@ export default async function Page({
           <p className="text-sm text-muted-foreground">
             {t("nav.admin")} #{admin.id}
           </p>
+          {errorText ? (
+            <p className="text-sm text-destructive">{errorText}</p>
+          ) : null}
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -69,9 +113,21 @@ export default async function Page({
           >
             {t("common.back")}
           </Link>
-          <Link href={`/admins/edit/${admin.id}`} className={buttonVariants()}>
-            {t("common.edit")}
-          </Link>
+          {isSuperAdmin ? (
+            <Link
+              href={`/admins/edit/${admin.id}`}
+              className={buttonVariants()}
+            >
+              {t("common.edit")}
+            </Link>
+          ) : null}
+          {isSuperAdmin && currentAdmin?.id !== admin.id ? (
+            <form action={deleteAdminAction.bind(null, id)}>
+              <Button type="submit" variant="destructive">
+                {t("common.delete")}
+              </Button>
+            </form>
+          ) : null}
         </div>
       </div>
 

@@ -40,6 +40,11 @@ const formatUsername = (value: string | null | undefined) => {
   return `@${u.replace(/^@+/, "")}`;
 };
 
+const formatOptionalText = (value: string | null | undefined) => {
+  const text = typeof value === "string" ? value.trim() : "";
+  return text.length > 0 ? text : "—";
+};
+
 const formatSupportStatus = (
   value: string | null | undefined,
   t: (key: string) => string,
@@ -129,6 +134,15 @@ export default async function Page({
                 </div>
                 <div className="text-sm">
                   {formatUsername(user.telegramUsername)}
+                </div>
+              </div>
+
+              <div className="grid gap-1">
+                <div className="text-sm text-muted-foreground">
+                  {t("common.telegramNickname")}
+                </div>
+                <div className="text-sm">
+                  {formatOptionalText(user.telegramNickname)}
                 </div>
               </div>
 

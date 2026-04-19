@@ -11,7 +11,6 @@ type Goal = {
   id: number;
   title: string;
   isActive: boolean;
-  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -115,13 +114,6 @@ export default async function Page({
                   {goal.isActive ? t("common.active") : t("common.inactive")}
                 </Badge>
               </div>
-            </div>
-
-            <div className="grid gap-1">
-              <div className="text-sm text-muted-foreground">
-                {t("common.sortOrder")}
-              </div>
-              <div className="text-sm font-mono">{goal.sortOrder}</div>
             </div>
 
             <div className="grid gap-1">

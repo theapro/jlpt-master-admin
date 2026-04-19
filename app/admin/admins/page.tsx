@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { ClickableTableRow } from "@/components/admin/clickable-table-row";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -22,6 +23,27 @@ type AdminRow = {
   createdAt: string;
 };
 
+type CurrentAdmin = {
+  id: number;
+  role: string;
+};
+
+async function deleteAdminAction(id: string) {
+  "use server";
+
+  try {
+    await backendJson<{ admin: { id: number } }>(`/api/admins/${id}`, {
+      method: "DELETE",
+    });
+  } catch {
+    const url = new URL("/admins", "http://local");
+    url.searchParams.set("error", "deleteFailed");
+    redirect(url.pathname + url.search);
+  }
+
+  redirect("/admins");
+}
+
 const formatAdminRole = (
   value: string | null | undefined,
   t: (key: string) => string,
@@ -32,10 +54,32 @@ const formatAdminRole = (
   return t("roles.unknown");
 };
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: Promise<{ error?: string }>;
+}) {
   const { t } = await getServerT();
 
+  const sp = (await searchParams) ?? {};
+  const error = typeof sp.error === "string" ? sp.error : null;
+  const errorKey = error ? `admins.${error}` : null;
+  const translatedError = errorKey ? t(errorKey) : null;
+  const errorText =
+    translatedError && translatedError !== errorKey ? translatedError : null;
+
   let admins: AdminRow[] = [];
+  let currentAdmin: CurrentAdmin | null = null;
+
+  try {
+    const data = await backendJson<{ admin: CurrentAdmin }>("/api/admin/me");
+    currentAdmin = data.admin;
+  } catch {
+    currentAdmin = null;
+  }
+
+  const isSuperAdmin = currentAdmin?.role === "super_admin";
+
   try {
     const data = await backendJson<{ admins: AdminRow[] }>("/api/admins");
     admins = Array.isArray(data.admins) ? data.admins : [];
@@ -62,10 +106,15 @@ export default async function Page() {
           <p className="text-sm text-muted-foreground">
             {admins.length} {t("admins.countLabel")}
           </p>
+          {errorText ? (
+            <p className="text-sm text-destructive">{errorText}</p>
+          ) : null}
         </div>
-        <Link href="/admins/create" className={buttonVariants()}>
-          {t("admins.createAction")}
-        </Link>
+        {isSuperAdmin ? (
+          <Link href="/admins/create" className={buttonVariants()}>
+            {t("admins.createAction")}
+          </Link>
+        ) : null}
       </div>
 
       <div className="px-4 lg:px-6">
@@ -102,15 +151,26 @@ export default async function Page() {
                       >
                         {t("common.view")}
                       </Link>
-                      <Link
-                        href={`/admins/edit/${a.id}`}
-                        className={buttonVariants({
-                          size: "sm",
-                          variant: "outline",
-                        })}
-                      >
-                        {t("common.edit")}
-                      </Link>
+                      {isSuperAdmin ? (
+                        <Link
+                          href={`/admins/edit/${a.id}`}
+                          className={buttonVariants({
+                            size: "sm",
+                            variant: "outline",
+                          })}
+                        >
+                          {t("common.edit")}
+                        </Link>
+                      ) : null}
+                      {isSuperAdmin && currentAdmin?.id !== a.id ? (
+                        <form
+                          action={deleteAdminAction.bind(null, String(a.id))}
+                        >
+                          <Button size="sm" variant="destructive" type="submit">
+                            {t("common.delete")}
+                          </Button>
+                        </form>
+                      ) : null}
                     </div>
                   </TableCell>
                 </ClickableTableRow>

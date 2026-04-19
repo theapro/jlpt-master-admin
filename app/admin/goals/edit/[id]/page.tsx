@@ -25,22 +25,18 @@ type Goal = {
   id: number;
   title: string;
   isActive: boolean;
-  sortOrder: number;
 };
 
 async function updateGoalAction(id: string, formData: FormData) {
   "use server";
 
   const title = String(formData.get("title") ?? "").trim();
-  const sortOrderRaw = String(formData.get("sortOrder") ?? "").trim();
   const isActive = String(formData.get("isActive") ?? "true").trim();
-
-  const sortOrder = sortOrderRaw.length > 0 ? sortOrderRaw : 0;
 
   try {
     await backendJson<{ goal: { id: number } }>(`/api/goals/${id}`, {
       method: "PATCH",
-      body: { title, sortOrder, isActive },
+      body: { title, isActive },
     });
 
     redirect(`/goals/${id}`);
@@ -146,20 +142,6 @@ export default async function Page({
                     </SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="sortOrder">{t("common.sortOrder")}</Label>
-                <Input
-                  id="sortOrder"
-                  name="sortOrder"
-                  type="number"
-                  step="1"
-                  defaultValue={String(goal.sortOrder)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t("goals.sortHint")}
-                </p>
               </div>
 
               {errorText ? (

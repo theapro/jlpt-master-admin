@@ -37,6 +37,7 @@
     "name": "Name",
     "title": "Title",
     "username": "Username",
+    "telegramNickname": "Telegram nickname",
     "phone": "Phone",
     "goal": "Goal",
     "role": "Role",
@@ -114,6 +115,7 @@
     "editAction": "Edit admin",
     "passwordOptional": "Leave password empty to keep it unchanged.",
     "updateFailed": "Failed to update admin",
+    "deleteFailed": "Failed to delete admin",
     "empty": "No admins."
   },
   "courses": {
@@ -223,6 +225,8 @@
     "noButtonsForState": "No buttons for this state.",
     "editButtonsTitle": "Edit buttons",
     "editButtonsDescription": "Drag & drop to change order. Click a button to edit its text.",
+    "orderOnlyDescription": "Drag & drop to change order.",
+    "orderOnlyHint": "This state supports order changes only. Text comes from goals/courses.",
     "buttonTextLabel": "Button text",
     "enterTextPlaceholder": "Enter text",
     "selectButtonPlaceholder": "Select a button",
