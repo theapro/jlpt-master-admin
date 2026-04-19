@@ -17,6 +17,7 @@ import { getServerT } from "@/lib/i18n/server";
 type SearchParams = {
   sent?: string | string[];
   error?: string | string[];
+  email?: string | string[];
 };
 
 const firstQueryValue = (value: string | string[] | undefined) =>
@@ -35,6 +36,7 @@ export default async function Page({
   const sp = await searchParams;
   const sent = firstQueryValue(sp?.sent);
   const error = firstQueryValue(sp?.error);
+  const email = firstQueryValue(sp?.email);
 
   const errorKey =
     typeof error === "string" && error.trim().length > 0
@@ -57,7 +59,13 @@ export default async function Page({
           <form action={requestPasswordResetAction} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">{t("common.email")}</Label>
-              <Input id="email" name="email" type="email" required />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                required
+                defaultValue={email ?? ""}
+              />
             </div>
 
             {sent === "1" ? (

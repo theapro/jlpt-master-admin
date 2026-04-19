@@ -19,21 +19,38 @@ const isProtectedPath = (pathname: string) =>
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
 
+const getPublicOrigin = (req: NextRequest) => {
+  const forwardedProto = req.headers
+    .get("x-forwarded-proto")
+    ?.split(",")[0]
+    ?.trim();
+  const forwardedHost = req.headers
+    .get("x-forwarded-host")
+    ?.split(",")[0]
+    ?.trim();
+  const host = forwardedHost || req.headers.get("host")?.trim();
+
+  const fallbackOrigin = new URL(req.url).origin;
+  if (!host) return fallbackOrigin;
+
+  const protocol =
+    forwardedProto || new URL(fallbackOrigin).protocol.replace(":", "");
+  return `${protocol}://${host}`;
+};
+
 export function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const token = req.cookies.get(ADMIN_TOKEN_COOKIE)?.value;
 
   if (pathname === "/admin/login") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/login";
+    const url = new URL("/login", getPublicOrigin(req));
+    url.search = req.nextUrl.search;
     return NextResponse.redirect(url);
   }
 
   if (pathname === "/login") {
     if (token) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/dashboard";
-      url.search = "";
+      const url = new URL("/dashboard", getPublicOrigin(req));
       return NextResponse.redirect(url);
     }
 
@@ -41,8 +58,7 @@ export function proxy(req: NextRequest) {
   }
 
   if (isProtectedPath(pathname) && !token) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/login";
+    const url = new URL("/login", getPublicOrigin(req));
     url.searchParams.set("next", `${pathname}${search}`);
     return NextResponse.redirect(url);
   }

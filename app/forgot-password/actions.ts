@@ -18,6 +18,7 @@ export async function requestPasswordResetAction(formData: FormData) {
   );
 
   const url = new URL("/forgot-password", "http://local");
+  if (email) url.searchParams.set("email", email);
 
   if (!res.ok) {
     url.searchParams.set("error", "sendResetFailed");
