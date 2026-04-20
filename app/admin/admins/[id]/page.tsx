@@ -11,6 +11,8 @@ type Admin = {
   id: number;
   name: string;
   email: string;
+  tgUsername: string | null;
+  tgChatId: string | null;
   role: string;
   createdAt: string;
 };
@@ -142,6 +144,24 @@ export default async function Page({
                 {t("common.email")}
               </div>
               <div className="text-sm">{admin.email}</div>
+            </div>
+
+            <div className="grid gap-1">
+              <div className="text-sm text-muted-foreground">
+                {t("common.telegramUsername")}
+              </div>
+              <div className="text-sm">
+                {admin.tgUsername
+                  ? `@${admin.tgUsername.replace(/^@+/, "")}`
+                  : "—"}
+              </div>
+            </div>
+
+            <div className="grid gap-1">
+              <div className="text-sm text-muted-foreground">
+                {t("common.telegramChatId")}
+              </div>
+              <div className="text-sm">{admin.tgChatId ?? "—"}</div>
             </div>
 
             <div className="grid gap-1">

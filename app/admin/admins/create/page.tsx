@@ -32,13 +32,14 @@ async function createAdminAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const tgUsername = String(formData.get("tgUsername") ?? "").trim();
   const role = String(formData.get("role") ?? "").trim();
 
   let data: { admin: { id: number } };
   try {
     data = await backendJson<{ admin: { id: number } }>("/api/admins", {
       method: "POST",
-      body: { name, email, password, role },
+      body: { name, email, password, role, tgUsername },
     });
   } catch {
     const url = new URL("/admins/create", "http://local");
@@ -107,6 +108,19 @@ export default async function Page({
               <div className="grid gap-2">
                 <Label htmlFor="email">{t("common.email")}</Label>
                 <Input id="email" name="email" type="email" required />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="tgUsername">
+                  {t("common.telegramUsername")}
+                </Label>
+                <Input
+                  id="tgUsername"
+                  name="tgUsername"
+                  placeholder="@username"
+                  required
+                  autoComplete="off"
+                />
               </div>
 
               <div className="grid gap-2">

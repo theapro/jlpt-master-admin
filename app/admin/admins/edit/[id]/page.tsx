@@ -30,6 +30,7 @@ type Admin = {
   id: number;
   name: string;
   email: string;
+  tgUsername: string | null;
   role: string;
   createdAt: string;
 };
@@ -39,10 +40,11 @@ async function updateAdminAction(id: string, formData: FormData) {
 
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
+  const tgUsername = String(formData.get("tgUsername") ?? "").trim();
   const role = String(formData.get("role") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
-  const body: Record<string, unknown> = { name, email, role };
+  const body: Record<string, unknown> = { name, email, role, tgUsername };
   if (password.trim().length > 0) body.password = password;
 
   try {
@@ -157,6 +159,19 @@ export default async function Page({
                   type="email"
                   required
                   defaultValue={admin.email}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="tgUsername">
+                  {t("common.telegramUsername")}
+                </Label>
+                <Input
+                  id="tgUsername"
+                  name="tgUsername"
+                  placeholder="@username"
+                  defaultValue={admin.tgUsername ?? ""}
+                  autoComplete="off"
                 />
               </div>
 

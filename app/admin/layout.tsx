@@ -1,8 +1,28 @@
+import { redirect } from "next/navigation";
+
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { backendJson, getAdminTokenFromCookies } from "@/lib/server-backend";
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+async function requireAdminSession() {
+  const token = await getAdminTokenFromCookies();
+  if (!token) redirect("/login");
+
+  try {
+    await backendJson("/api/admin/me", { token });
+  } catch {
+    redirect("/login");
+  }
+}
+
+export default async function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  await requireAdminSession();
+
   return (
     <SidebarProvider
       style={
