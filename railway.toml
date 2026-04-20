@@ -1,10 +1,16 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm ci && npm run build"
+buildCommand = "npm run build"
+
+[variables]
+NIXPACKS_NODE_VERSION = "20"
+NPM_CONFIG_CACHE = "/tmp/.npm"
+NPM_CONFIG_AUDIT = "false"
+NPM_CONFIG_FUND = "false"
 
 [deploy]
 startCommand = "npm run start"
-healthcheckPath = "/login"
-healthcheckTimeout = 120
+healthcheckPath = "/api/health"
+healthcheckTimeout = 60
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
