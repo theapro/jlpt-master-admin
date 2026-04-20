@@ -15,11 +15,30 @@ type AdminUser = {
   telegramNickname: string | null;
   currentStep: string;
   goal: string | null;
-  experience: string | null;
+  experience: "beginner" | "intermediate" | null;
   learningFormat: string | null;
+  pendingCourseId: number | null;
   isInSupport: boolean;
   supportStatus: string;
   createdAt: string;
+};
+
+const resolveCourseLabel = (
+  user: Pick<AdminUser, "experience" | "pendingCourseId">,
+  courseTitle: string | null,
+  t: (key: string) => string,
+) => {
+  if (user.experience === "beginner") return t("userExperience.beginner");
+  if (courseTitle) return courseTitle;
+
+  const courseId = user.pendingCourseId;
+  if (typeof courseId === "number" && courseId > 0) {
+    return `${t("common.course")} #${courseId}`;
+  }
+
+  if (user.experience === "intermediate")
+    return t("userExperience.intermediate");
+  return "—";
 };
 
 type ChatHistoryResponse = {
@@ -82,6 +101,28 @@ export default async function Page({
         </div>
       </div>
     );
+  }
+
+  let courseTitle: string | null = null;
+  const pendingCourseId =
+    typeof user.pendingCourseId === "number" ? user.pendingCourseId : null;
+  if (
+    user.experience !== "beginner" &&
+    pendingCourseId &&
+    pendingCourseId > 0
+  ) {
+    try {
+      const data = await backendJson<{ course: { title: string } }>(
+        `/api/courses/${pendingCourseId}`,
+      );
+      courseTitle =
+        typeof data.course?.title === "string"
+          ? data.course.title.trim()
+          : null;
+      if (courseTitle && courseTitle.length === 0) courseTitle = null;
+    } catch {
+      courseTitle = null;
+    }
   }
 
   let lastActivity: string | null = null;
@@ -160,6 +201,15 @@ export default async function Page({
               <CardTitle>{t("common.learningInfo")}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4">
+              <div className="grid gap-1">
+                <div className="text-sm text-muted-foreground">
+                  {t("common.course")}
+                </div>
+                <div className="text-sm">
+                  {resolveCourseLabel(user, courseTitle, t)}
+                </div>
+              </div>
+
               <div className="grid gap-1">
                 <div className="text-sm text-muted-foreground">
                   {t("common.selectedGoal")}

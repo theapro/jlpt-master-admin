@@ -244,6 +244,11 @@
     "closed": "Yopilgan",
     "unknown": "Noma’lum"
   },
+  "userExperience": {
+    "beginner": "Boshlang‘ich",
+    "intermediate": "Tushuncham bor",
+    "unknown": "Noma’lum"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "users": "Foydalanuvchilar",

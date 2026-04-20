@@ -244,6 +244,11 @@
     "closed": "Closed",
     "unknown": "Unknown"
   },
+  "userExperience": {
+    "beginner": "Beginner",
+    "intermediate": "Has some experience",
+    "unknown": "Unknown"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "users": "Users",

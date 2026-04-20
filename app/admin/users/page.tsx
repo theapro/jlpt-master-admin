@@ -22,16 +22,40 @@ type AdminUser = {
   phone: string | null;
   telegramUsername: string | null;
   telegramNickname: string | null;
+  pendingCourseId: number | null;
   goal: string | null;
+  experience: "beginner" | "intermediate" | null;
   isInSupport: boolean;
   supportStatus: "none" | "pending" | "active" | "closed";
   supportAdmin: { id: number; name: string } | null;
+};
+
+type AdminCourse = {
+  id: number;
+  title: string;
 };
 
 const formatUsername = (value: string | null | undefined) => {
   const u = typeof value === "string" ? value.trim() : "";
   if (!u) return "—";
   return `@${u.replace(/^@+/, "")}`;
+};
+
+const resolveCourseLabel = (
+  user: AdminUser,
+  courseById: Map<number, string>,
+  t: (key: string) => string,
+) => {
+  if (user.experience === "beginner") return t("userExperience.beginner");
+
+  const courseId = user.pendingCourseId;
+  if (typeof courseId === "number" && courseId > 0) {
+    return courseById.get(courseId) ?? `${t("common.course")} #${courseId}`;
+  }
+
+  if (user.experience === "intermediate")
+    return t("userExperience.intermediate");
+  return "—";
 };
 
 async function updateSupportStatusAction(userId: number, formData: FormData) {
@@ -87,6 +111,21 @@ export default async function Page({
     );
   }
 
+  const courseById = new Map<number, string>();
+  try {
+    const data = await backendJson<{ courses: AdminCourse[] }>("/api/courses");
+    const courses = Array.isArray(data.courses) ? data.courses : [];
+    for (const c of courses) {
+      if (!c || typeof c !== "object") continue;
+      const id = typeof c.id === "number" ? c.id : null;
+      const title = typeof c.title === "string" ? c.title.trim() : "";
+      if (!id || id <= 0) continue;
+      courseById.set(id, title || `${t("common.course")} #${id}`);
+    }
+  } catch {
+    // ignore: course labels fall back to course id or experience label
+  }
+
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="px-4 lg:px-6">
@@ -109,6 +148,7 @@ export default async function Page({
                 <TableHead>{t("common.name")}</TableHead>
                 <TableHead>{t("common.username")}</TableHead>
                 <TableHead>{t("common.phone")}</TableHead>
+                <TableHead>{t("common.course")}</TableHead>
                 <TableHead>{t("common.goal")}</TableHead>
                 <TableHead>{t("common.support")}</TableHead>
                 <TableHead>{t("common.operator")}</TableHead>
@@ -132,6 +172,7 @@ export default async function Page({
                     {formatUsername(u.telegramUsername)}
                   </TableCell>
                   <TableCell>{u.phone ?? "—"}</TableCell>
+                  <TableCell>{resolveCourseLabel(u, courseById, t)}</TableCell>
                   <TableCell>{u.goal ?? "—"}</TableCell>
                   <TableCell>
                     <SupportStatusSelect
@@ -158,7 +199,7 @@ export default async function Page({
 
               {users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-10 text-center">
+                  <TableCell colSpan={8} className="py-10 text-center">
                     {t("users.empty")}
                   </TableCell>
                 </TableRow>

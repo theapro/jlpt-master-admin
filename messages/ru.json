@@ -258,6 +258,11 @@
     "buttons": "Кнопки",
     "admin": "Админ"
   },
+  "userExperience": {
+    "beginner": "Начальный",
+    "intermediate": "Есть опыт",
+    "unknown": "Неизвестно"
+  },
   "theme": {
     "switchToLight": "Переключить на светлую тему",
     "switchToDark": "Переключить на тёмную тему"
