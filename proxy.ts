@@ -42,19 +42,16 @@ export function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const token = req.cookies.get(ADMIN_TOKEN_COOKIE)?.value;
 
+  // Keep login always reachable. A stale/invalid token can otherwise cause
+  // /dashboard -> (app redirect) /login -> (proxy redirect) /dashboard loops.
+  if (pathname === "/login") {
+    return NextResponse.next();
+  }
+
   if (pathname === "/admin/login") {
     const url = new URL("/login", getPublicOrigin(req));
     url.search = req.nextUrl.search;
     return NextResponse.redirect(url);
-  }
-
-  if (pathname === "/login") {
-    if (token) {
-      const url = new URL("/dashboard", getPublicOrigin(req));
-      return NextResponse.redirect(url);
-    }
-
-    return NextResponse.next();
   }
 
   if (isProtectedPath(pathname) && !token) {
